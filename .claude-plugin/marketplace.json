@@ -1,0 +1,15 @@
+{
+  "name": "idei-skills",
+  "description": "Skills for generating and checking ideas",
+  "owner": {
+    "name": "Roger1111Roger",
+    "url": "https://github.com/Roger1111Roger"
+  },
+  "plugins": [
+    {
+      "name": "idei-skills",
+      "source": "./plugins/idei-skills",
+      "description": "Ideas: generation, feasibility check, requirements spec, test cases, implementation prompt"
+    }
+  ]
+}

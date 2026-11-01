@@ -1,0 +1,13 @@
+{
+  "name": "idei-skills",
+  "description": "Skills for generating ideas, checking their feasibility and, optionally, preparing a requirements spec, test cases and an implementation prompt. Built on a sourced catalog of 90 methods.",
+  "version": "0.1.0",
+  "author": {
+    "name": "Roger1111Roger",
+    "url": "https://github.com/Roger1111Roger"
+  },
+  "homepage": "https://github.com/Roger1111Roger/idei-skills",
+  "repository": "https://github.com/Roger1111Roger/idei-skills",
+  "license": "MIT",
+  "keywords": ["ideas", "ideation", "feasibility", "requirements", "test-cases"]
+}

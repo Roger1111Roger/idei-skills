@@ -1,0 +1,706 @@
+<title>IDEAS</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@700;800&display=swap">
+<style>
+/* Layout: left-to-right flow graph (hub, approaches, check chain) beside a working panel; dark-first like a note graph */
+:root{
+  --bg:#10131a;--panel:#161a23;--panel2:#1d222d;--line:#2b3243;--fg:#e8ebf2;--mut:#919bb0;
+  --hub:#ff8a5c;--apr:#8f9dff;--stp:#43d4b4;--res:#e07be8;--ext:#8590a8;--cus:#f2b45c;
+  --ok:#4cc27f;--warn:#e8b23c;--bad:#ef6b6b;--grid:#1b2030;
+  --disp:'Unbounded','Arial Black',system-ui,sans-serif;
+  --body:'Onest',system-ui,-apple-system,'Segoe UI',sans-serif;
+  color-scheme:dark;
+}
+@media (prefers-color-scheme: light){
+  :root:not([data-theme="dark"]){
+    --bg:#f3f4f8;--panel:#ffffff;--panel2:#eceff5;--line:#d5d9e4;--fg:#171c2b;--mut:#566076;
+    --hub:#d9481f;--apr:#3d4fcf;--stp:#0b8a70;--res:#a3269c;--ext:#76809a;--cus:#a35f00;
+    --ok:#1b8f4d;--warn:#a87000;--bad:#c93434;--grid:#dfe3ec;
+    color-scheme:light;
+  }
+}
+:root[data-theme="light"]{
+  --bg:#f3f4f8;--panel:#ffffff;--panel2:#eceff5;--line:#d5d9e4;--fg:#171c2b;--mut:#566076;
+  --hub:#d9481f;--apr:#3d4fcf;--stp:#0b8a70;--res:#a3269c;--ext:#76809a;--cus:#a35f00;
+  --ok:#1b8f4d;--warn:#a87000;--bad:#c93434;--grid:#dfe3ec;
+  color-scheme:light;
+}
+:root{--cl0:#b79cff;--cl1:#5ec8ff;--cl2:#f2b45c;--cl3:#43d4b4;--cl4:#ef7fb0;--cl5:#b8d84a}
+@media (prefers-color-scheme: light){:root:not([data-theme="dark"]){--cl0:#7a55e0;--cl1:#0a82c4;--cl2:#a35f00;--cl3:#0b8a70;--cl4:#c4417f;--cl5:#5a7d00}}
+:root[data-theme="light"]{--cl0:#7a55e0;--cl1:#0a82c4;--cl2:#a35f00;--cl3:#0b8a70;--cl4:#c4417f;--cl5:#5a7d00}
+*{box-sizing:border-box}
+body{
+  background:var(--bg);color:var(--fg);font-family:var(--body);font-size:14px;line-height:1.45;
+  padding-block:14px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));
+  padding-right:max(16px,env(safe-area-inset-right,0px));
+}
+.app{max-width:1560px;margin:0 auto;display:grid;gap:12px}
+header{display:flex;flex-wrap:wrap;align-items:center;gap:10px 22px}
+.brand{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+h1{font:800 24px/1 var(--disp);letter-spacing:.08em;margin:0}
+.sub{color:var(--mut)}
+.legend{padding-top:12px;display:flex;flex-wrap:wrap;gap:6px 14px;color:var(--mut);font-size:13px}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend .sep{font-weight:600;color:var(--fg)}
+.dot{width:10px;height:10px;border-radius:50%;display:inline-block;border:2px solid var(--c);background:color-mix(in srgb,var(--c) 25%,transparent)}
+.d-apr{--c:var(--apr)}.d-stp{--c:var(--stp);border-radius:3px}.d-ext{--c:var(--ext)}.d-cus{--c:var(--cus);border-style:dashed}
+.tools{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-left:auto}
+button{font:inherit;color:inherit}
+.tools button,.chip,.seg button,.go,.danger,#addf button{cursor:pointer}
+.tools button{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:5px 11px;min-height:32px}
+.tools button:hover{border-color:var(--mut)}
+button:focus-visible,textarea:focus-visible,input:focus-visible,.node:focus-visible{outline:2px solid var(--cus);outline-offset:2px}
+.sync{color:var(--mut);font-size:12px;min-width:150px;text-align:right}
+.sync[data-k="err"],.sync[data-k="slow"]{color:var(--bad)}
+.main{display:grid;grid-template-columns:minmax(0,1fr) 350px;gap:12px;align-items:start}
+@media (max-width:900px){.main{grid-template-columns:minmax(0,1fr)}.sync{text-align:left}.tools{margin-left:0}}
+.stage{
+  position:relative;height:clamp(460px,78vh,900px);overflow:hidden;
+  border:1px solid var(--line);border-radius:10px;
+  background:radial-gradient(var(--grid) 1.2px,transparent 1.4px) 0 0/24px 24px,var(--bg);
+}
+@media (max-width:900px){.stage{height:66vh;min-height:420px}}
+#svg{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:grab;user-select:none;-webkit-user-select:none}
+#svg:active{cursor:grabbing}
+#world{transform-origin:0 0}
+.stage.anim #world{transition:transform .45s cubic-bezier(.2,.7,.2,1)}
+.edge{fill:none;stroke-linecap:round;transition:opacity .25s}
+.e-spoke{stroke:var(--mut);stroke-width:1.2;opacity:.35}
+.e-feed{stroke:var(--apr);stroke-width:1.7;stroke-dasharray:6 8;animation:f14 1.1s linear infinite;marker-end:url(#m-feed);opacity:.8}
+.e-flow{stroke:var(--stp);stroke-width:2.8;stroke-dasharray:9 7;animation:f16 .85s linear infinite;marker-end:url(#m-flow)}
+.e-loop,.e-ret{stroke:var(--cus);stroke-width:2.2;stroke-dasharray:8 8;animation:f16 1.1s linear infinite;marker-end:url(#m-cus)}
+.e-aux{stroke:var(--ext);stroke-width:1.2;stroke-dasharray:2 5;opacity:.75}
+.e-chk{stroke:var(--cus);stroke-width:2.2;stroke-dasharray:4 6;animation:f10 .8s linear infinite;opacity:0}
+.e-chk.on{opacity:1}
+.e-rel{stroke:var(--c);stroke-width:2;stroke-dasharray:3 6;animation:f10 .8s linear infinite;opacity:0}
+.e-rel.on{opacity:.95}
+.edge.dim{opacity:.07}
+@keyframes f14{to{stroke-dashoffset:-14}}
+@keyframes f16{to{stroke-dashoffset:-16}}
+@keyframes f10{to{stroke-dashoffset:-10}}
+#m-feed path{fill:var(--apr)}#m-flow path{fill:var(--stp)}#m-cus path{fill:var(--cus)}
+.elab{font:600 12px var(--body);fill:var(--cus);text-anchor:middle;paint-order:stroke;stroke:var(--bg);stroke-width:5px;stroke-linejoin:round;pointer-events:none}
+.node{cursor:pointer;transition:opacity .25s;outline:none}
+.node.dim{opacity:.15}
+.node .hit{fill:transparent;pointer-events:all}
+.node .body{stroke-width:2;transition:stroke-width .15s}
+.k-hub .body{fill:var(--hub);stroke:none}
+.k-approach .body{fill:color-mix(in srgb,var(--apr) 18%,var(--bg));stroke:var(--apr)}
+.frame{fill:color-mix(in srgb,var(--res) 6%,var(--bg));stroke:var(--res);stroke-width:1.5;stroke-dasharray:6 6;pointer-events:none}
+.frame-t{fill:var(--res);font-size:12px;font-weight:600;letter-spacing:.06em;pointer-events:none}
+.k-step.res .body{fill:color-mix(in srgb,var(--res) 14%,var(--bg));stroke:var(--res)}
+.k-step.res .nb{fill:var(--res)}
+.e-resarc{stroke:var(--res);stroke-width:1.8;stroke-dasharray:3 6;marker-end:url(#m-res);opacity:.85}
+.e-resflow{stroke:var(--res);stroke-width:2.8;stroke-dasharray:9 7;animation:f16 .85s linear infinite;marker-end:url(#m-res)}
+#m-res path{fill:var(--res)}
+.d-res{--c:var(--res);border-radius:3px}
+.chip.res,.kind.res{--c:var(--res)}
+.k-step .body{fill:color-mix(in srgb,var(--stp) 14%,var(--bg));stroke:var(--stp)}
+.k-extra .body{fill:var(--panel2);stroke:var(--ext);stroke-width:1.5}
+.k-custom .body{fill:color-mix(in srgb,var(--cus) 12%,var(--bg));stroke:var(--cus);stroke-dasharray:3 3}
+.node:hover .body{stroke-width:3.4}
+.node.sel .body{stroke-width:4}
+.node.chk .body{stroke:var(--cus);stroke-width:3.4}
+.ring{fill:none;stroke:transparent;stroke-width:3}
+.node[data-st="1"] .ring{stroke:var(--warn)}
+.node[data-st="2"] .ring{stroke:var(--ok)}
+.node[data-st="3"] .ring{stroke:var(--bad);stroke-dasharray:3 4}
+.pulse{fill:none;stroke:var(--cus);stroke-width:2.5;opacity:0;transform-box:fill-box;transform-origin:center}
+.node.chk .pulse{animation:pulse 1.7s ease-out infinite}
+@keyframes pulse{from{transform:scale(1);opacity:.9}to{transform:scale(1.55);opacity:0}}
+.lbl,.slbl,.hubt,.num{pointer-events:none}
+.lbl{font:500 13px var(--body);fill:var(--fg);text-anchor:middle;paint-order:stroke;stroke:var(--bg);stroke-width:4px;stroke-linejoin:round}
+.k-extra .lbl{font-size:12px;fill:var(--mut)}
+.slbl{font:600 13px var(--body);fill:var(--fg)}
+.hubt{font:800 14px var(--disp);letter-spacing:.04em;fill:var(--bg);text-anchor:middle;dominant-baseline:central}
+.nb{fill:var(--stp)}
+.num{font:700 13px var(--body);fill:var(--bg);text-anchor:middle;dominant-baseline:central}
+.nd{fill:var(--cus);stroke:var(--bg);stroke-width:1.5;display:none;pointer-events:none}
+.node.hasnote .nd{display:block}
+.selchip{position:absolute;left:10px;bottom:10px;right:10px;display:none;align-items:center;justify-content:space-between;gap:10px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:8px 10px}
+@media (max-width:900px){.selchip:not([hidden]){display:flex}}
+.selchip b{font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.go{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:5px 10px;white-space:nowrap}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px;display:flex;flex-direction:column;gap:16px;min-width:0}
+#pc{display:flex;flex-direction:column;gap:14px;min-width:0}
+.kind{margin:0;font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--c,var(--mut));font-weight:600}
+.c-approach{--c:var(--apr)}.c-step{--c:var(--stp)}.c-extra{--c:var(--ext)}.c-hub{--c:var(--hub)}.c-custom{--c:var(--cus)}
+h2{margin:0;font-size:20px;line-height:1.2;font-weight:600;text-wrap:balance}
+h3{margin:0 0 6px;font-size:12px;color:var(--mut);font-weight:600;letter-spacing:.04em}
+.desc,.why{margin:0;max-width:65ch}
+.why{color:var(--mut);margin-bottom:8px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{display:inline-flex;align-items:center;gap:6px;border:1px solid color-mix(in srgb,var(--c) 55%,var(--line));background:color-mix(in srgb,var(--c) 12%,var(--panel));border-radius:999px;padding:3px 10px;font-size:13px;min-height:28px}
+.chip b{display:inline-grid;place-items:center;min-width:18px;height:18px;border-radius:50%;background:var(--c);color:var(--bg);font-size:11px}
+.chip:hover{background:color-mix(in srgb,var(--c) 22%,var(--panel))}
+.seg{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+.seg button{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:6px 8px;min-height:34px}
+.seg button[aria-checked="true"]{border-color:var(--fg);font-weight:600}
+.seg button[data-s="1"][aria-checked="true"]{background:color-mix(in srgb,var(--warn) 22%,var(--panel2))}
+.seg button[data-s="2"][aria-checked="true"]{background:color-mix(in srgb,var(--ok) 22%,var(--panel2))}
+.seg button[data-s="3"][aria-checked="true"]{background:color-mix(in srgb,var(--bad) 22%,var(--panel2))}
+textarea,input[type=text]{width:100%;background:var(--panel2);color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:8px 10px;font:inherit;resize:vertical}
+.danger{align-self:flex-start;background:transparent;border:1px solid var(--bad);color:var(--bad);border-radius:8px;padding:5px 12px}
+.how{margin:0;padding-left:18px;display:grid;gap:8px;color:var(--fg)}
+.how li::marker{color:var(--mut)}
+.stats{display:flex;flex-wrap:wrap;gap:6px 16px;color:var(--mut);font-size:13px}
+.stats b{color:var(--fg);font-variant-numeric:tabular-nums}
+#addf{display:grid;gap:8px;border-top:1px solid var(--line);padding-top:14px}
+#addf label{font-size:12px;color:var(--mut);font-weight:600;letter-spacing:.04em}
+#addf .row{display:flex;gap:6px}
+#addf button{background:var(--cus);color:var(--bg);border:0;border-radius:8px;padding:0 14px;font-weight:600;min-height:36px}
+.cl0{--c:var(--cl0)}.cl1{--c:var(--cl1)}.cl2{--c:var(--cl2)}.cl3{--c:var(--cl3)}.cl4{--c:var(--cl4)}.cl5{--c:var(--cl5)}
+.e-cspoke{stroke:var(--c);stroke-width:1.2;opacity:.5}
+.k-method .body{fill:color-mix(in srgb,var(--c) 16%,var(--bg));stroke:var(--c)}
+.k-cluster .body{fill:var(--c);stroke:none}
+.k-cluster .lbl{font-size:14px;font-weight:600}
+.tabs{display:flex;gap:4px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:3px}
+.tabs button{border:0;background:transparent;border-radius:8px;padding:5px 12px;min-height:30px;cursor:pointer}
+.tabs button[aria-selected="true"]{background:var(--panel2);font-weight:600}
+.views{display:contents}
+#q{width:170px;max-width:100%;background:var(--panel);color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:5px 10px;min-height:32px;font:inherit}
+.steps{margin:0;padding-left:20px;display:grid;gap:6px;max-width:65ch}
+.src{margin:0;color:var(--mut);font-size:12px;overflow-wrap:anywhere}
+.src a{color:inherit}
+@media (prefers-reduced-motion:reduce){.edge,.pulse{animation:none!important}.stage.anim #world{transition:none}}
+</style>
+
+<div class="app">
+  <header>
+    <div class="brand"><h1>IDEAS</h1></div>
+    <div class="tools">
+      <span id="views" class="views"></span>
+      <button type="button" id="zin" aria-label="Zoom in">+</button>
+      <button type="button" id="zout" aria-label="Zoom out">−</button>
+      <span id="sync" class="sync" role="status" data-k="wait"></span>
+    </div>
+  </header>
+  <div class="main">
+    <div class="stage anim" id="stage">
+      <svg id="svg" role="group" aria-label="IDEAS knowledge map">
+        <defs>
+          <marker id="m-feed" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="10" markerHeight="10" markerUnits="userSpaceOnUse" orient="auto"><path d="M0 1.5 L9 5 L0 8.5z"/></marker>
+          <marker id="m-res" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="13" markerHeight="13" markerUnits="userSpaceOnUse" orient="auto"><path d="M0 1 L9.5 5 L0 9z"/></marker>
+          <marker id="m-flow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="13" markerHeight="13" markerUnits="userSpaceOnUse" orient="auto"><path d="M0 1 L9.5 5 L0 9z"/></marker>
+          <marker id="m-cus" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="12" markerHeight="12" markerUnits="userSpaceOnUse" orient="auto"><path d="M0 1 L9.5 5 L0 9z"/></marker>
+        </defs>
+        <g id="world"><g id="frames"></g><g id="edges"></g><g id="nodes"></g></g>
+      </svg>
+      <div class="selchip" id="chip" hidden><b id="chipt"></b><button type="button" class="go" id="chipgo">Open panel ↓</button></div>
+    </div>
+    <aside class="panel" id="panel" aria-live="polite">
+      <div id="pc"></div>
+    </aside>
+  </div>
+    <div class="legend" id="legend" aria-label="Legend"></div>
+</div>
+
+<script>
+(function(){
+'use strict';
+var W=1320,H=860,BX0=-820,BY0=-230,BX1=1600,BY1=1300;
+var $=function(s){return document.querySelector(s)};
+var esc=function(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})};
+var KIND={hub:'Map center',approach:'Approach to idea creation',step:'Hypothesis check step',extra:'Easy to forget',custom:'Own idea',cluster:'Method base section',method:'Method'};
+var STATUS=['Not started','In progress','Done','Dropped'];
+var HUB_D='A working map of the research: from ways of generating an idea to checking its feasibility. Click a node to see its description and links. Project scope: come up with an idea, write the most detailed requirements specification possible and the main test cases for checking that the implementation is correct. The implementation itself is not part of the project.';
+
+var APR=[
+ {id:'a1',label:'Jobs to Be\nDone (JTBD)',d:'Start from the goal for which a person “hires” a product: functional, social or emotional, rather than from demographics. The main question: what job does the person hire the product to do? The ways of collecting data (interviews, observation, support requests) were chosen for the project; the JTBD schools (Christensen, Ulwick, Moesta) have their own techniques.',src:'https://www.wikiwand.com/en/articles/Jobs_to_Be_Done',checks:['s1','s5','s6'],why:'A user-side axis of assessment and a cheap experiment are needed: first make sure the pain is real, and only then build.'},
+ {id:'a2',label:'Analogies\nand transfer',d:'Take a solution from another field (biology, transport, games, medicine) and adapt it. For example, move the mechanics of one game genre into another.',src:'https://groups.psych.northwestern.edu/gentner/papers/Gentner83.2b.pdf',checks:['s4','s5'],why:'Check that the transfer works in the new place: what already exists, and whether the technology and economics fit.'},
+ {id:'a3',label:'SCAMPER',d:'Substitute, combine, adapt, modify, put to another use, eliminate, reverse. Seven questions to ask of an existing solution (Eberle, 1971, based on Osborn\'s list).',src:'https://en.wikipedia.org/wiki/SCAMPER',checks:['s2','s4'],why:'Every transformation carries assumptions. Write them down and check them against what others have already done.'},
+ {id:'a4',label:'Constraints',d:'What if it were half the price, had no interface, took one minute? Hard limits cut off the usual answers and push toward new ones. Not every constraint helps: the useful ones are those that demand effort, and expertise in the field is needed.',src:'https://scottbarrykaufman.com/does-creativity-require-constraints',checks:['s3','s5'],why:'The constraint itself becomes a success criterion. Then check technical feasibility.'},
+ {id:'a5',label:'First\nprinciples',d:'Break the problem down into basic facts and build the solution anew, without relying on “how it is usually done”.',src:'https://concepts.dsebastien.net/concept/first-principles/',checks:['s2','s5'],why:'The assumptions are written out explicitly. What remains is to assess the technical and economic axes.'},
+ {id:'a6',label:'Gap\nanalysis',d:'Study the market, articles and reviews of competitors. Look for unmet demand and for what has only just become technically possible.',src:'https://askattest.com/blog/articles/how-to-find-gaps-in-the-market',checks:['s4','s5'],why:'Confirm that the gap is real, is not closed by analogues, and that people are ready to pay for or use the solution.'},
+ {id:'a7',label:'Divergence →\nconvergence',d:'Quantity first: brainstorming, brainwriting, “100 ideas in 20 minutes”. Then selection against criteria set in advance. The same logic is in the Double Diamond model (Design Council, 2005): widening and narrowing first for the problem, then for the solution.',src:'https://www.scrum.org/resources/blog/double-diamond-uk-design-council',checks:['s2','s3'],why:'Selection follows the criteria. Rank by risk and set success thresholds in advance.'},
+ {id:'a8',label:'Extreme\nusers',d:'Study those who use the product in non-standard ways: they may reveal needs hidden in the typical scenario, and their solutions often help ordinary users as well. Risk: drifting away from the target market.',src:'https://en.wikipedia.org/wiki/Extreme_users',checks:['s6','s7'],why:'The sample is small. Watch for measurement bias and do not extend the conclusions to everyone.'},
+ {id:'a9',label:'Brainstorming',d:'Osborn\'s method: more ideas, criticism is deferred, wild ideas are welcome, ideas are combined. But in a review of 22 studies (Diehl, Stroebe), groups usually produced fewer ideas than the same people working alone: waiting for one\'s turn to speak gets in the way. “Nominal groups” work better: ideas are written separately, then collected.',src:'https://en.wikipedia.org/wiki/Brainstorming',checks:['s2','s3'],why:'Many ideas result, so selection is needed: rank by risk and set criteria in advance, otherwise the loudest one gets chosen.'},
+ {id:'a10',label:'Wild ideas\n(70/20/10)',d:'Deliberately include a share of “crazy” ideas. A common template: about 70% feasible, 20% bold and 10% that sound idiotic at first. Among the latter there are breakthroughs; the rest teach to think more broadly. Related techniques: Edward de Bono\'s provocation (Po), that is, making a statement to see where it leads, the “worst idea”, reverse brainstorming. No independent confirmation that the 70/20/10 proportion is the best was found; the original article did not open.',src:'https://en.wikipedia.org/wiki/Po_(lateral_thinking)',checks:['s2','s6'],why:'A wild idea must not be dropped on first impression. Write down the assumptions and check them with a cheap experiment.'},
+ {id:'a11',label:'Assumption\nreversal',d:'Write down the “obvious” assumptions about the problem and deliberately reverse each one. What if it is the opposite? What if the user pays for exactly the opposite?',src:'https://www.creativitypost.com/article/turn_your_assumptions_upside_down',checks:['s2','s7'],why:'The reversed assumption immediately becomes a testable hypothesis, and measurement will show which of the versions is right.'},
+ {id:'a12',label:'Change\nof scale',d:'Look at the problem across different orders of magnitude of a chosen scale (size, time, cost, complexity): add or remove a zero and look for patterns that repeat at different levels (the Powers of Ten technique). For example, one user or a million, a minute or a year.',src:'https://hpi-epic.github.io/dt-at-it-toolbox/methods/08%20-%20Powers%20of%20Ten.pdf',checks:['s5','s6'],why:'An idea may work on a small scale and break on a large one, or the other way round. Assess the economics at both scales, run the pilot at the small one.'},
+ {id:'a13',label:'Method\nmerging',d:'Combine techniques from two different fields into one. Example: game mechanics in financial education. This also covers the transfer of methods between disciplines. This is one author\'s practical view, not a proven regularity: the same author notes that a set of methods does not replace the creative leap itself.',src:'https://opus.cloud1.lib.uts.edu.au/handle/10453/144963',checks:['s4','s5'],why:'Check that the junction is really new and that the two parts are compatible technically and economically.'},
+ {id:'a14',label:'Speculating about\nnew technologies',d:'Imagine different futures: probable, plausible, possible and preferable (Dunne, Raby). What becomes possible when the technology matures, and which ideas will pay off there?',src:'https://strangehorizons.com/non-fiction/articles/the-art-of-futures/',checks:['s4','s5'],why:'Rely on verifiable trends, not on expectations. Make sure the technology already exists at least in prototypes, and assess the technical axis.'}
+];
+var STP=[
+ {id:'s1',num:1,label:'Hypothesis',d:'Formulate it so that it can be tested: “If [action], then [measurable result], because [assumption]”. The result is described as specific and measurable, and a hypothesis is written for each assumption of the idea, not for the idea as a whole.',src:'https://www.producttalk.org/experiment-design/',x:640,y:220},
+ {id:'s2',num:2,label:'Assumptions\nand risks',d:'Write down the assumptions and rank them by risk. First check the one that, if wrong, kills the whole idea and for which there is no evidence.',src:'https://www.strategyzer.com/library/how-assumptions-mapping-can-focus-your-teams-on-running-experiments-that-matter',x:830,y:220},
+ {id:'s3',num:3,label:'Success\ncriteria',d:'The metric and the threshold of success and failure are set before the experiment. Otherwise the result is fitted to the expectation. It is useful to divide criteria into mandatory and desirable. Decide in advance what to do if the hypothesis is confirmed, refuted or the result is unclear.',src:'https://www.producttalk.org/experiment-design/ https://www.inloox.com/company/blog/articles/product-development-with-the-stage-gate-r-process-part-3-procedure-and-structure/',x:1020,y:220},
+ {id:'s4',num:4,label:'Desk\nresearch',d:'Literature, analogues, patents, existing solutions. Perhaps everything has already been checked before you. For patents: come up with search terms, search in USPTO, Espacenet and Google Patents, widen the search by CPC classes and check the references in the closest patents.',src:'https://libguides.msoe.edu/patent-search/Searching',x:1210,y:220},
+ {id:'s5',num:5,label:'Assessment:\nthree axes',d:'Technical: can it be built and with what risks. Economic: cost, payback, scale. User: do people need it and will they pay for or use it. Assumptions are divided into desirability (do they want it), feasibility (can it be built) and viability (will it pay off). Five kinds of feasibility: see the TELOS method.',src:'https://www.strategyzer.com/library/how-assumptions-mapping-can-focus-your-teams-on-running-experiments-that-matter',x:1210,y:420},
+ {id:'s6',num:6,label:'Mini-\nexperiment',d:'The cheapest way to get data: a prototype, a mockup, “Wizard of Oz”, a landing page with pre-registration, a measurement on a small sample.',src:'https://uxpajournal.org/wp-content/uploads/sites/7/pdf/JUS_Kelley_May2018.pdf',x:1020,y:420},
+ {id:'s7',num:7,label:'Measurement',d:'Compare the result with the thresholds from step 3, check for bias and chance. Each conclusion is labeled by its origin, and it has a check that can fail.',src:'https://www.statology.org/5-types-of-data-bias-and-how-to-address-them/',x:830,y:420},
+ {id:'s8',num:8,label:'Decision',d:'Continue, change direction or stop. Record the result, including a negative one. Then either iterate from step 2 or take a new idea. If the idea passes, the project outcome is a detailed spec and the main test cases for checking the implementation. The gate may also put the project on hold (hold) or send it back for rework (rework).',src:'https://www.inloox.com/company/blog/articles/product-development-with-the-stage-gate-r-process-part-3-procedure-and-structure/',x:640,y:420},
+ {id:'s9',num:9,label:'Requirements\nspecification',res:1,d:'For an idea that has passed the check: a detailed requirements document. What the system does, for whom, what the constraints and acceptance criteria are. Requirements are written to be verifiable, so that a test case can be made for each. The boundaries of the first version are described separately: what is in it and what is not (MoSCoW is suitable for this).',src:'https://en.wikipedia.org/wiki/Easy_Approach_to_Requirements_Syntax https://en.wikipedia.org/wiki/User_story',x:640,y:780},
+ {id:'s10',num:10,label:'Test\ncases',res:1,d:'The main test cases for checking that the implementation is correct. Each requirement has a matching case, and a case has input data, steps and an expected result. The implementation is not part of the project.',src:'https://martinfowler.com/bliki/GivenWhenThen.html https://istqb.org/wp-content/uploads/2025/10/Boundary-Value-Analysis-white-paper.pdf',x:640,y:920},
+ {id:'s11',num:11,label:'Implementation\nprompt',res:1,d:'For an approved idea: a prompt from which the executor (an AI, a team or a contractor) can start work without your involvement. It is assembled entirely from the spec (step 9) and the test cases (step 10) and adds no content of its own, so it is rebuilt whenever those steps change. Contents: goal and context explaining why it is needed; requirements; boundaries of the first version; acceptance cases as the criterion of readiness; constraints with reasons; how to ask questions and how to report. Check: give the prompt to a person who does not know the task; if it is unclear to them, it will be unclear to the AI as well. The implementation is not part of the project.',src:'https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-prompting-best-practices',x:640,y:1060},
+];
+var EXT=[
+ {id:'e1',label:'Goal and\ndecision',d:'What decision will be made based on the research results and who makes it. Without this it is unclear what counts as a result.',src:'https://www.producttalk.org/experiment-design/',to:['s1'],x:640,y:70},
+ {id:'e2',label:'Idea\nprioritization',d:'ICE (impact, confidence, ease) or RICE (reach, impact, confidence, effort). It helps choose which ideas to check first. Weak spot: confidence is easily overstated without evidence, and the score does not replace a decision.',src:'https://productplan.com/glossary/rice-scoring-model https://www.koji.so/docs/ice-prioritization-framework',to:['s2'],x:800,y:70},
+ {id:'e5',label:'Resources\nand deadlines',d:'Budget, time for the experiment and stop conditions. They are set together with the success criteria. One company\'s practice: a time limit, a cost ceiling and a stop condition before starting; no basic evidence by the deadline means changing course or closing.',src:'https://leaddev.com/?p=33386',to:['s3'],x:960,y:70},
+ {id:'e3',label:'Competitors and\nalternatives',d:'What people do now instead of your solution. Including the option of “doing nothing”.',src:'https://www.aprildunford.com/post/positioning-and-competition',to:['s4'],x:1120,y:70},
+ {id:'e10',label:'AI in\nresearch',d:'Skills, search and subagents speed up the collection of sources and save tokens on routine work.',to:['s4'],x:1280,y:70},
+ {id:'e8',label:'Hypothesis\nlog',d:'Record every hypothesis and result, especially a negative one: even “mistakes” often turn out to be important. Do not erase errors but cross them out legibly, and date every entry.',src:'https://web.physics.indiana.edu/courses/p451/s15/index_files/Page480.htm',to:['s8'],x:802,y:642},
+ {id:'e9',label:'Stakeholders',d:'Who checks the intermediate conclusions, and when. Boehm\'s and McConnell\'s data on requirements defects in software: fixing late costs more than fixing early, so users are involved as early as possible.',src:'https://stevemcconnell.com/articles/an-ounce-of-prevention/',to:['s8'],x:703,y:573},
+ {id:'e6',label:'Data and\nbias',d:'Sources, reliability, biases: sampling, confirmation, measurement, observer, survivorship. Each has a remedy: random sampling, blind checking, calibration, accounting for failures.',src:'https://www.statology.org/5-types-of-data-bias-and-how-to-address-them/',to:['s7'],x:988,y:589},
+ {id:'e7',label:'Reproducibility',d:'Reproducibility: the same data and code give the same result. Replicability: a new study with new data gives a consistent result (definitions of the US National Academies). This requires clear methods and open data and code.',src:'https://www.nationalacademies.org/news/2019/09/reproducibility-and-replicability-in-research',to:['s6'],x:1109,y:618},
+ {id:'e4',label:'Law\nand ethics',d:'Licenses, personal data, copyright, platform restrictions. Checked before an experiment on people and data. Under the DfE rules for user research: informed consent, anonymization in analysis, restricted access to data. Licenses and copyright are not confirmed by this page.',src:'https://user-research.education.gov.uk/standards-and-principles/personal-data-handling',to:['s5'],x:1240,y:615},
+ {id:'e11',label:'Honesty of\nevidence',d:'Project rule: each statement is labeled by its origin (a fact with a source, an observation, an assumption or an estimate). Sources that did not open are recorded, not skipped. Each conclusion has a check that can fail. Basis: honesty, rigor and transparency in good research practice.',src:'https://www.auckland.ac.nz/en/research/research-resources/research-integrity-good-research-practice/introduction-research-integrity-good-research-practice.html',to:['s4','s7'],x:980,y:320},
+ {id:'e12',label:'Different\nviewpoints',d:'Examine the idea through the eyes of several roles: future user, developer, tester, skeptic, lawyer, financier. Each role asks its own questions, the answers are taken from sources and labeled by origin. Result: a common list of questions, contradictions and gaps, from which the plan of the spec is built. The idea is taken from STORM: the system first finds different viewpoints, then asks questions from each and relies on sources. The roles themselves were chosen here for the project.',src:'https://arxiv.org/html/2402.14207v1',to:['s4'],x:1120,y:320},
+ {id:'e13',label:'Limits of\nthe check',d:'From an analysis of the evaluation of early ideas (a student project, a single case): the final choice often remains “by gut feeling”, even with tools. Participants\' silence may mean misunderstanding, not low value of the idea. A quantitative check requires more people than most teams have.',to:['s7','s8'],x:800,y:536},
+];
+
+var KB_HUB_D='A base of methods for generating ideas and framing problems from the academic literature. Click a section or a method: the essence and basics of application appear on the right. The methods are described according to the commonly accepted account, and not all sources have been checked: for each method it is stated whether a reference was found.';
+var KB_HELP='<p class="kind">How to read the base</p><ul class="how"><li>Five sections around the center. Click a method: the essence and basics of application appear on the right.</li><li>For each method it is stated whether a reference to a source was found. The methods are everywhere described according to the commonly accepted account, not according to the text of the original source.</li><li>The search at the top highlights methods by name, Enter opens the first one.</li><li>Statuses and notes are saved for each method.</li></ul>';
+var CL=[
+ {name:'Psychology of\ncreativity',d:'Theories and cognitive models of how people generate new ideas.',x:-600,y:-90,b:170,a:55,m:[
+  ['p1','Wallas\nstages','A four-stage model of the creative process, described by Wallas in 1926.',['Preparation: gather material and define the problem.','Incubation: step away from the problem and do something else.','Illumination: write the idea down immediately when it comes.','Verification: evaluate and refine the idea.'],'https://www.themarginalian.org/2013/08/28/the-art-of-thought-graham-wallas-stages/'],
+  ['p2','Geneplore','Creativity as a two-phase cycle: generating raw “preinventive structures” and exploring them (Finke, Ward, Smith, 1992).',['Quickly produce many raw forms without criticism.','Look for what can be interpreted and applied in each form.','Return to generation if no meaning was found.'],'https://people.tamu.edu/~stevesmith/fwscont.html'],
+  ['p3','Types of creativity\n(Boden)','Creativity can be combinational, exploratory or transformational.',['Write out the implicit rules of your field.','Combinational: combine familiar ideas in a new way.','Exploratory: reach the limits of the solution space.','Transformational: remove or replace one of the rules.'],'https://dvps.nd.edu/news/creativity-as-a-scientific-virtue-we-know-how-to-be-more-creative/'],
+  ['p4','Divergent\nthinking','Creativity is measured by answers to an open-ended task: fluency (how many), flexibility (how varied), originality (how unusual), elaboration (Guilford).',['Set a limit: 20 options in 5 minutes.','Group the options by category: flexibility equals the number of categories.','Mark rare options as original and develop the best ones.','For practice, use a task about unusual uses of an object.'],'https://en.wikipedia.org/wiki/Guilford%27s_Alternate_Uses'],
+  ['p5','Associative\ntheory','New ideas arise from distant associations (Mednick, 1962, Remote Associates Test).',['Take three words from distant fields.','Find a word or concept that links all three.','Apply the link you found to your problem.'],'https://www.scientificamerican.com/blog/beautiful-minds/the-controlled-chaos-of-creativity'],
+  ['p6','Bisociation','An idea arises at the intersection of two normally unconnected systems of thought (Koestler, 1964).',['Choose two unconnected frames, for example taxi and game.','Write down what exists in both.','Build a new concept from the overlaps.'],'https://en.wikipedia.org/wiki/The_Act_of_Creation'],
+  ['p7','Structure\nmapping','Analogy transfers a system of relations between objects, not surface features (Gentner, 1983).',['Describe the problem through relations between elements, without details.','Find a field where such a relation is already solved.','Transfer the system of relations, not the outward appearance.','Check where the transfer breaks down.'],'https://groups.psych.northwestern.edu/gentner/papers/Gentner83.2b.pdf'],
+  ['p8','Conceptual\nblending','Two mental spaces are projected into a blend with a new structure (Fauconnier, Turner, 2002).',['Describe two mental spaces.','Choose a shared schema and one feature from each.','Project them into a blend and run it as a scenario.','Assess which new properties have appeared.'],'https://www.markturner.org/wwt.html'],
+  ['p9','Janusian\nthinking','The ability to hold two opposite ideas in mind as simultaneously true (Rothenberg). The steps below are taken from M. Mikhalko\'s account.',['Turn the problem into a paradox: two opposite sides, both true.','Collapse the paradox into a two-word title.','Find an analogy in nature or another field.','Pick out its special property and transfer the equivalent to the problem.','Develop this into a new idea.'],'https://www.creativitypost.com/article/janusian_thinking'],
+  ['p10','Abduction','Reasoning that generates explanatory hypotheses (Peirce): from a surprising fact to a hypothesis that would make it expected. In the modern sense, this is inference to the best explanation.',['Record the surprising fact.','Ask: what would have to be true for this to be expected?','Write down at least three explanations.','Choose the one that explains better and can be tested.'],'https://plato.stanford.edu/entries/abduction/'],
+  ['p11','Incubation\nand insight','A pause helps problem solving, especially for ill-defined problems (meta-analysis by Sio, Ormerod, 2009).',['Work on the problem, then deliberately step away.','During the pause, choose an undemanding activity.','Come back and write down what came to mind.'],'https://pubmed.ncbi.nlm.nih.gov/19210055/'],
+  ['p12','Random\nstimuli','A random word leads to the edge of the problem, from where you can see paths not available from the center (de Bono).',['State the problem clearly.','Take a random noun and use the first one that comes up.','Work with the word\'s concepts and properties; do not look for a simple match.','Do not change the word and do not build a chain of associations; keep the links that gave the idea.'],'https://soma.sbcc.edu/Users/Russotti/118/howtouserandomwords.html'],
+  ['p13','Serendipity','An unexpected event noticed by a person with the right skills: neither pure luck nor pure skill.',['Leave a time buffer in the work for deviations.','Write down unexpected findings immediately.','Return to your notes periodically.'],'https://journal.trialanderror.org/pub/serendipity-in-scientific/download/pdf']
+ ]},
+ {name:'Engineering\nand design',d:'Structured methods of invention, design and strategy.',x:-1150,y:830,b:180,a:55,m:[
+  ['g1','TRIZ','Theory of Inventive Problem Solving: laws of development of technical systems and standard techniques for resolving contradictions (Altshuller).',['Describe the problem and the ideal final result.','State the technical contradiction: improving one thing worsens another.','Find standard techniques for resolving the contradiction.','Check the solution for new contradictions.'],'https://www.metodolog.ru/triz-journal/archives/1999/04/e/index.htm'],
+  ['g2','ARIZ','Algorithm of Inventive Problem Solving: a step-by-step conversion of a vague problem into a physical contradiction.',['State the mini-problem.','Identify the conflicting elements and the ideal result.','Move to the physical contradiction.','Find a way to resolve it and check it.'],'https://www.metodolog.ru/triz-journal/archives/1999/03/e/index.htm'],
+  ['g3','SIT','Systematic Inventive Thinking: changing a product using five templates in a “closed world” (Goldenberg, Mazursky, Solomon, 1999).',['List the components of the product and its environment.','Apply a template: subtraction, multiplication, division, task unification or attribute dependency.','Assess where the modified version gives value.'],'https://cris.huji.ac.il/en/publications/toward-identifying-the-inventive-templates-of-new-products-a-chan/'],
+  ['g4','Morphological\nanalysis','The problem is broken down into parameters and options, then their combinations are enumerated (Zwicky).',['Break the problem down into independent parameters.','List the options for each parameter.','Build a matrix and go through the combinations.','Screen out the unfeasible ones and choose the promising ones.'],'https://www.toolshero.com/creativity/morphological-analysis-fritz-zwicky/'],
+  ['g5','Biomimetics','Searching for solutions in living nature through the six steps of the “biomimicry spiral” (Biomimicry Institute).',['Define: what impact and what criteria are needed.','Biologize: describe the functions and context in the language of biology.','Find natural models with the same function.','Abstract: reformulate the mechanism as a design strategy.','Apply: assemble concepts from the principles found.','Evaluate against the criteria and return to earlier steps.'],'https://toolbox.biomimicry.org/methods/process/'],
+  ['g6','Focal object\nmethod','The attributes of a random object are applied to those of the original object to obtain unusual combinations.',['Choose the original object and a random object.','Write down the attributes of the random object.','Apply each attribute to the original object.','Assess the unusual combinations.'],'https://shift.dodobrands.io/en/creative-techniques/method-of-focal-objects'],
+  ['g7','C-K theory','Design as an expansion of the space of concepts (C) and the space of knowledge (K) (Hatchuel, Weil).',['Write the initial concept in C with no known answer.','Separate what is already known (K) from what is not.','Expand C with new attributes, noting the knowledge needed.','Acquire knowledge until the concept becomes feasible.'],'https://www.designsociety.org/download-publication/24204/a_new_approach_of_innovative_design_an_introduction_to_c-k_theory'],
+  ['g8','Design\nthinking','An iterative cycle: empathy, problem definition, ideation, prototype, test (Stanford d.school). The stages are not strictly sequential..',['Study users: interviews, observation.','State the problem as a question.','Generate ideas and choose a few.','Make a cheap prototype and test it with people.','Return to the appropriate step based on the result.'],'https://ixdf.org/literature/article/5-stages-in-the-design-thinking-process'],
+  ['g9','Blue ocean\nstrategy','Searching for a new market by asking four questions about the factors accepted in the industry (Kim, Mauborgne).',['Draw the industry\'s strategy canvas.','Apply the four actions: eliminate, reduce, raise, create.','Find a factor that competitors do not have.','Check that there is demand for the new offering.'],'https://www.blueoceanstrategy.com/?p=266408'],
+  ['g10','Lead\nusers','Lead users face general market needs months or years before the rest and will benefit from a solution (von Hippel).',['Define the characteristics of a lead user in your field.','Find a group of people with these characteristics.','Bring them together with the team and solve the problem jointly.','Check whether ordinary users value what was found.'],'https://www.mit.edu/people/evhippel/papers/Herstatt-EvH%20Journal%20Product%20Innov%20Management.pdf'],
+  ['g11','Backcasting','A normative approach: first describe the desired future, then determine the steps from it back to the present (Robinson).',['Describe the desired future.','Determine what must happen before it.','Build the path back to the present.','Single out the nearest steps.'],'https://en.wikipedia.org/wiki/Backcasting'],
+  ['g12','Scenario\nplanning','Several plausible scenarios of the future for testing strategies.',['Choose a focal question and a time horizon.','Identify the key forces and uncertainties.','Build 2-4 plausible scenarios, for example around the two main uncertainties.','Test the idea against them and find robust solutions.'],'https://intrac.org/wpcms/wp-content/uploads/2024/11/Scenario-planning.pdf'],
+  ['g13','Mind maps','A branching diagram radiating from a central topic (Buzan).',['Write the central topic as an image in the center.','Draw branches from it with the main subtopics.','On each branch, put one key word or image.','Use colors and look for links between branches.'],'https://www.gvsu.edu/cms4/asset/91D2F15F-DAF4-C2F7-B659ECCACE9E7375/mindmapping_handout.pdf'],
+  ['g14','QFD and FCA','Quality function deployment and functional cost analysis: translating requirements into characteristics and finding cheap ways to deliver a function.',['Write out user requirements and rate their importance.','Translate them into technical characteristics and link them to the requirements (9 / 3 / 1).','Describe functions as “verb + noun” pairs and build a FAST diagram using the “how / why” logic.','For each function, look for another way to perform it.'],'https://www.qimacros.com/lean-six-sigma-articles/qfd-house-of-quality/ https://www.aleanjourney.com/?p=8554']
+ ]},
+ {name:'Group\nmethods',d:'Procedures by which a group generates and selects ideas.',x:-600,y:410,b:125,a:45,m:[
+  ['q1','Synectics','Deliberate metaphors and analogies show a familiar problem in an unfamiliar context (Gordon).',['Make the familiar strange: each person writes about five metaphors for the phrase “Our problem is like…”.','Use analogies: direct (like a bird), personal (imagine being the object), compressed conflict (a pair of contradictory words).','Choose one or two of the most apt metaphors and explain the choice.','Together find hidden problems and new ideas.'],'https://boisestate.pressbooks.pub/thecreativeprocess/?p=101'],
+  ['q2','Six Thinking\nHats','The whole group wears one “hat” at the same time, that is, looks at the question in one role, then switches roles (de Bono).',['Hats: white (facts), red (feelings), black (risks), yellow (benefits), green (ideas), blue (process control).','Everyone in the group wears the same hat at any given moment.','The facilitator with the blue hat sets the order and asks for summaries.','Do not overuse the black hat.','Record the decisions and actions.'],'https://www.sessionlab.com/methods/the-six-thinking-hats'],
+  ['q3','Brainwriting\n6-3-5','Six people each write three ideas in five minutes and pass the sheets around the circle: 108 ideas in 30 minutes (Rohrbach, 1968).',['Each person writes three ideas in five minutes.','Pass the sheet to the neighbor.','The neighbor develops the ideas or adds new ones.','Repeat for six rounds, then group the ideas.'],'https://en.wikipedia.org/wiki/6-3-5_Brainwriting'],
+  ['q4','Nominal\ngroup technique','Ideas are written individually, then discussed and ranked by voting (Delbecq, Van de Ven, 1971).',['The facilitator explains the goal and the procedure.','Everyone silently writes down ideas for about 10 minutes.','Read the ideas aloud in turn without discussion.','Clarify the ideas and merge them into categories, discarding nothing.','Rank by voting.'],'https://en.wikipedia.org/wiki/Nominal_group_technique'],
+  ['q5','Delphi\nmethod','Anonymous rounds of surveying experts with feedback (Helmer, Dalkey, Rescher, RAND).',['Assemble a group of knowledgeable experts.','Send out the questionnaire.','Consolidate the answers and comments, find points of agreement and disagreement.','Send out an anonymized summary; the experts revise their answers.','Repeat until a predefined stopping point: a number of rounds or a stable result.'],'https://en.wikipedia.org/wiki/Delphi_method']
+ ]},
+ {name:'Science and\nproblem framing',d:'How researchers find problems and formulate testable hypotheses.',x:-1150,y:0,b:250,a:62,m:[
+  ['n1','Problem finding','The value of research depends on how well the problem is found and formulated (Getzels, Csikszentmihalyi, 1976).',['Write down the original problem statement.','Reformulate it in at least three ways.','Compare which formulation opens up more paths.','Choose a formulation and record it.'],'https://libcat.library.tamu.edu/Record/in00000601483'],
+  ['n2','Problematization\ninstead of gap-spotting','Instead of looking for what is “not studied”, the hidden assumptions of the literature are challenged (Alvesson, Sandberg, 2011).',['Write out the assumptions the literature rests on.','Choose a debatable assumption.','Formulate a question that challenges it.','Check that the question does not reduce to “nobody has studied this”.'],'https://www.4cities.eu/wp-content/uploads/2021/11/ALVESSON-and-SANDBERG-Generating-research-questions-through-problematization.pdf'],
+  ['n3','Problem selection\n(Fischbach, Walsh)','Systematic selection of a scientific problem using decision trees (Cell, 2024).',['Formulate candidate problems.','Assess the significance and feasibility of each.','Go through the decision tree: is it worth continuing.'],'https://www.cell.com/cell/fulltext/S0092-8674(24)00304-0'],
+  ['n4','Evidence gap\nmaps','The map shows where research exists and where it does not.',['Define the field and the interventions.','Systematically find the studies.','Place them in an “intervention by outcome” matrix.','Treat empty cells as candidate questions.'],'https://openknowledge.worldbank.org/server/api/core/bitstreams/f3f96f65-9e0a-5e20-83c9-efed72b9b2ad/content'],
+  ['n5','James Lind\nAlliance','Patients and doctors jointly rank unanswered questions.',['Bring together patients and clinicians.','Collect unanswered questions.','Check against the literature that the question is truly open.','Rank jointly and pick out the main ones.'],'https://jla.nihr.ac.uk/media/9261/download'],
+  ['n6','Horizon\nscanning','Systematic search for early signs of change: weak signals, that is, emerging topics that may grow.',['Watch the PESTLE areas: politics, economy, society, technology, law, environment.','Use different sources: research, media, interviews, other people\'s reviews, atypical sources.','Assess the signals: trends and possible consequences.','Repeat regularly.','Record the outcome in seminars, consultations, databases.'],'https://analysisfunction.civilservice.gov.uk/blog/horizon-scanning-and-futures-thinking-tools-for-government-analysts'],
+  ['n7','Literature-based\ndiscovery','Hypotheses from links between two unconnected bodies of literature (Swanson, 1986).',['Choose two bodies of literature.','Find shared intermediate terms.','Write out pairs that are absent from the direct literature.','Assess plausibility and check.'],'https://pmc.ncbi.nlm.nih.gov/articles/PMC225324'],
+  ['n8','Grounded\ntheory','Theory is derived from data by the constant comparative method (Glaser, Strauss, 1960s).',['Open coding: read the data line by line and mark ideas.','Axial coding: refine the codes and compare new data with earlier data.','Group the codes into categories and find the core category.','Theoretical sampling: use the gaps to decide what data to look for next.','Keep notes (memo).','Continue until saturation, when no new ideas appear.'],'https://www.simplypsychology.org/constant-comparative-method.html'],
+  ['n9','Anomalies\n(Kuhn)','Anomaly: a problem that cannot be solved within the paradigm; accumulating anomalies lead to a crisis and a new paradigm (Kuhn).',['Record results that do not fit expectations.','Check that it is not a measurement error.','Ask which assumption is broken.','Formulate a hypothesis to replace it.'],'https://bertie.ccsu.edu/naturesci/Evolution/Unit10Background/Kuhn.html'],
+  ['n10','Counterfactual\nthinking','Imagine an alternative to what has already happened. “Upward” versions (how it could have been better) show what to change in the future.',['Take an event or a decision.','Imagine how it could have been better: add an action that did not happen, or remove something that did.','Describe the consequences.','Turn the differences into a testable hypothesis.'],'https://en.wikipedia.org/wiki/Counterfactual_thinking'],
+  ['n11','Thought\nexperiments','An imagined situation in which an operation is carried out mentally and the consequences are examined. Destructive experiments reveal contradictions in a theory; constructive ones help understanding.',['Build an idealized scenario.','Apply a theory or assumption to it.','Find a contradiction or an unexpected conclusion.','Check the conclusion against real observation.'],'https://plato.stanford.edu/archives/spr2006/entries/thought-experiment'],
+  ['n13','AI hypothesis\ngeneration','AI proposes hypotheses based on the literature; a human assesses novelty and testability.',['Formulate the research goal.','Ask the AI to generate hypotheses with justification from the literature.','Screen them for novelty and testability together with an expert.','Check the references manually.'],'https://arxiv.org/pdf/2502.18864'],
+  ['n14','Crowdsourcing and\ncitizen science','Scientific work with public participation: from small tasks (observation, classification) to jointly posing questions.',['Decide the participants\' role: data contribution or co-authorship.','Break the task into simple parts.','Give clear rules and an interface.','Collect the observations.','Verify with experts.'],'https://en.wikipedia.org/wiki/Citizen_science'],
+  ['n15','Hamming\nquestions','Choosing an important problem that has an approach to it (Hamming, “You and Your Research”). The importance of a result does not make a problem important; a good approach is also needed.',['Keep a list of 10-20 important problems in the field.','Ask: why are you not working on them?','What is needed for a good approach to one of them to appear?'],'https://www.cs.utexas.edu/~dahlin/bookshelf/hamming.html'],
+  ['n16','FINER criteria','A filter for a question: feasibility, interest, novelty, ethics, relevance (Hulley et al.).',['Assess the question against each criterion.','Mark the criterion that fails.','Reformulate the question or postpone it.'],'https://medicine.usask.ca/facultydev/research/documents/Asking-Research-Questions.pdf'],
+  ['n17','PICO','Structure of a clinical question: patient or problem, intervention, comparison, outcome. Helps to search for evidence more precisely.',['P: describe the patient or problem, not too narrowly.','I: name the intervention or exposure.','C: what it is compared with.','O: a measurable and important outcome.'],'https://libguides.mssm.edu/ebm/ebp_pico'],
+  ['n18','Strong inference\n(Platt)','A cycle of four steps: alternative hypotheses, a crucial experiment, a clean result, repetition for the remaining ones (Platt, 1964).',['Write out alternative hypotheses.','Devise a crucial experiment: each outcome excludes at least one hypothesis.','Run the experiment so that the result is clean.','Repeat with sub-hypotheses for the remaining ones.'],'https://www.whoi.edu/cms/files/platt64sci_72743.pdf'],
+  ['n19','Falsifiability','A statement is falsifiable if one can describe an observation that contradicts it (Popper).',['State which result would refute the hypothesis.','Set the threshold in advance.','Look for refutation, not confirmation.'],'https://en.wikipedia.org/wiki/Falsifiability'],
+  ['n20','Preregistration','Hypotheses, design and analysis plan are publicly recorded before data collection; this separates hypothesis testing from exploratory analysis.',['Describe the hypotheses, design and analysis plan before collecting data.','Register the plan with a timestamp.','Carry it out according to the plan.','Mark deviations explicitly and separate confirmatory and exploratory analyses.'],'https://casrai.org/learn/what-is-preregistration']
+ ]},
+ {name:'What the\ndata show',d:'Empirical data on which techniques work better or worse than is commonly thought.',x:-600,y:910,b:125,a:45,m:[
+  ['d1','Production\nblocking','In oral group brainstorming, participants wait for their turn and lose their thoughts, so such groups produce fewer ideas than the same people working separately (Diehl, Stroebe; Mullen et al., 1991).',['Start with individual writing of ideas.','Combine and discuss afterwards.'],'https://en.wikipedia.org/wiki/Production_blocking'],
+  ['d2','Alone first,\nthen as a group','The hybrid produced more and better ideas than teamwork (Girotra, Terwiesch, Ulrich, 2010).',['Each person generates ideas separately.','The group combines and selects.'],'https://repository.upenn.edu/oid_papers/191'],
+  ['d3','Debate vs\n“don\'t criticize”','An instruction to debate gave better results than the classic “don\'t criticize” (Nemeth et al.).',['Allow objections in the group.','Keep the tone respectful.'],'https://escholarship.org/uc/item/4k70n7v8'],
+  ['d4','Fixation\non examples','A shown example makes people copy its features (Jansson, Smith, 1991).',['At an early stage, do not look at existing solutions.','Show examples later, and varied ones.'],'https://www.cambridge.org/core/product/AD93E342571AB85057D36CFD4C53EE77'],
+  ['d5','Distant and near\nanalogies','In the experiment by Fu et al. (2013), distant analogies gave less novel ideas; the optimum is presumably at a medium distance.',['Take analogies of different distances.','Prefer the middle to the extremes.'],'https://www.lrdc.pitt.edu/Schunn/papers/fuchanetal-near-far-2013.pdf'],
+  ['d6','AI and idea\ndiversity','AI raises individual creativity but reduces the diversity of ideas in a group (Doshi, Hauser, 2024).',['Generate some of the ideas without AI.','Ask the AI for different styles and roles.','Check the resulting diversity.'],'https://pmc.ncbi.nlm.nih.gov/articles/PMC11244532'],
+ ]}
+];
+var MAP={p1:['a7'],p2:['a7'],p3:['a11','a13'],p4:['a7','a9'],p5:['a2','a13'],p6:['a13','a2'],p7:['a2'],p8:['a13'],p9:['a11'],p10:['a11','a6'],p11:['a7'],p12:['a10','a2'],p13:['a6'],
+g1:['a4','a5'],g2:['a5'],g3:['a3','a4'],g4:['a3','a13'],g5:['a2'],g6:['a13','a3'],g7:['a5','a11'],g8:['a1','a8'],g9:['a6','a11'],g10:['a8'],g11:['a14'],g12:['a14'],g13:['a7'],g14:['a1'],
+q1:['a2','a9'],q2:['a9'],q3:['a9','a7'],q4:['a9','a7'],q5:['a14'],
+n1:['a1','a6'],n2:['a11','a6'],n3:['a6'],n4:['a6'],n5:['a1','a6'],n6:['a14','a6'],n7:['a6','a13'],n8:['a1','a6'],n9:['a11','a6'],n10:['a11'],n11:['a11'],n13:['a6','a13'],n14:['a8'],n15:['a6'],n16:['s5'],n17:['s1'],n18:['s6'],n19:['s3','s1'],n20:['s7','s3'],
+d1:['a9'],d2:['a9','a7'],d3:['a9'],d4:['a2','a7'],d5:['a2'],d6:['a9','a7']};
+CL[1].m.push(['r2','Assumption\nmap','Assumptions are formulated as testable hypotheses and placed by importance and by availability of evidence; important ones without evidence are tested first.',['Write hypotheses as “We believe that…”: desirability, feasibility, viability.','Draw a 2×2 grid: importance and availability of evidence.','Place the hypotheses on the grid.','Pick the “important, no evidence” corner and devise checks for it.'],'https://www.strategyzer.com/library/how-assumptions-mapping-can-focus-your-teams-on-running-experiments-that-matter']);
+CL[1].m.push(['r4','Technology readiness\nlevels (TRL)','Nine levels from an idea to a technology proven in operation (NASA).',['Describe the idea\'s technology.','Use the scale to determine which level is already proven.','Compare with the required level.','Turn the gap into check tasks.'],'https://www.nasa.gov/directorates/spacetech/spinoff/feature/technology-readiness-levels']);
+CL[1].m.push(['r5','Wizard of Oz','The user works with a “system” behind which a human acts manually. The idea is tested without development (Kelley, 1984).',['Describe what the user will see and do.','One person manually imitates the work of the system.','Observe and record the user\'s behavior.','Decide whether it is worth automating.'],'https://uxpajournal.org/wp-content/uploads/sites/7/pdf/JUS_Kelley_May2018.pdf']);
+CL[2].m.push(['r1','Pre-mortem','The group imagines that the project has already failed and explains the reasons (Klein, 2007).',['Tell the group: “Imagine that a year from now the project has failed.”','Everyone silently writes down the reasons.','Collect the reasons and group them.','For the main reasons, add assumptions or measures to the check.'],'https://comprobo24.github.io/assignments/performing_a_project_premortem.pdf']);
+CL[3].m.push(['r3','Fermi\nestimation','A rough estimate of a quantity by parts, to land within an order of magnitude.',['Break the question into estimable parts.','Estimate each one roughly.','Combine and obtain the estimate.','If desired, set lower and upper bounds.','Compare with the threshold from the success criteria.'],'https://sensibility.berkeley.edu/index.php/8.2_Fermi_Problems']);
+CL.push({name:'Requirements\nand testing',d:'How to write an idea as a requirements specification and how to check that the implementation matches it.',m:[
+ ['t1','EARS','Templates for phrasing requirements so that they read unambiguously (Mavin et al., Rolls-Royce).',['Choose a template by type: always, event-driven, state-driven, unwanted case, optional.','Write: “When <event>, the system shall <action>.”','Check that the requirement is single, measurable and without “and/or”.'],'https://en.wikipedia.org/wiki/Easy_Approach_to_Requirements_Syntax'],
+ ['t2','Kano model','Features are divided into must-be, linear and attractive (Kano, 1984).',['Write out the idea\'s features.','For each, ask: “how would you feel if it is present” and “if it is absent”.','Assign the feature to a category based on the answers.','Include the must-be features in the spec first.'],'https://en.wikipedia.org/wiki/Kano_model'],
+ ['t3','MoSCoW','Prioritization of requirements: must, should, could, won\'t have this time (Dai Clegg, 1994; widely used in DSDM).',['Write out the requirements.','Sort them into four groups.','“Must” is critical for the current delivery: without any one of them it is considered a failure.','Check that all the “musts” really fit in the time frame.'],'https://en.wikipedia.org/wiki/MoSCoW_method'],
+ ['t4','User\nstories','A requirement as a short story in the template “As a <role>, I can <action>, so that <benefit>” (Kent Beck, XP; Connextra template).',['Write: “As a <role>, I can <action>, so that <benefit>.” The “so that” part is optional.','Add acceptance criteria: what the story must do to be accepted.','Split stories that are too large.'],'https://en.wikipedia.org/wiki/User_story'],
+ ['t5','Use\ncases','A description of the primary actor\'s goal: the main success path and extensions for failures (Cockburn template).',['Name the primary actor, the goal and the trigger event.','Write the preconditions and the result on success.','Describe the main success path in numbered steps.','Add extensions (3a: step 3 went wrong) and the failure condition.','Each path will become the basis for a test case.'],'https://cs.otago.ac.nz/coursework/cosc461/uctempla.htm'],
+ ['t6','Equivalence classes\nand boundaries','Input data is divided into classes with the same behavior, and a class representative and values at the boundaries are tested (ISTQB).',['Identify valid and invalid ranges.','Take one value from each class.','Add values at the boundaries and next to them.','Write the expected result for each.'],'https://istqb.org/wp-content/uploads/2025/10/Boundary-Value-Analysis-white-paper.pdf'],
+ ['t7','Given / When /\nThen','A scenario in three parts: the state before, the behavior, the expected result (Terhorst-North, Matts; BDD). The same format suits acceptance criteria.',['Given: the initial state.','When: the action.','Then: the observable result.','One example tests one rule.'],'https://martinfowler.com/bliki/GivenWhenThen.html'],
+ ['t8','Requirements\ntraceability','A table of links between documents, for example “requirement — test case”, helps to check the completeness of coverage.',['Number the requirements.','For each, write the numbers of the test cases.','Find requirements without test cases and test cases without requirements.'],'https://en.wikipedia.org/wiki/Traceability_matrix']
+]});
+Object.assign(MAP,{r1:['s2'],r2:['s2'],r3:['s4'],r4:['s5'],r5:['s6'],t1:['s9'],t2:['s9'],t3:['s9'],t4:['s9'],t5:['s9'],t6:['s10','s9'],t7:['s10','s9'],t8:['s10','s9']});
+CL[2].m.push(['i1','Creative Problem\nSolving','A structured method: six stages, in each of which options are first generated and then narrowed (Parnes, 1950s; Isaksen, Treffinger). Stages 1–5 are used here; the sixth (implementation plan) is outside the project\'s scope.',['Mess-finding: write out what is worth solving and choose the main item.','Data-finding: gather facts (who, what, where, when, why, how).','Problem-finding: reformulate into a broad statement suitable for ideas.','Idea-finding: come up with as many as possible, without evaluating.','Solution-finding: set criteria, compare the strong ideas and choose the best.'],'https://create-labgest.uniud.it/Handbook/techniques/List/CPS.php']);
+CL[0].m.push(['i2','Provocation\nand movement (PO)','A deliberately false statement about what is taken as given serves as a starting point for ideas (de Bono, 1992). The source notes: it does not always give useful ideas and works better in a close-knit group.',['Make a provocation: “houses have no roofs”.','Do not evaluate it, accept it as it is.','Movement: work through the consequences, benefits, circumstances in which it makes sense, and the principles needed for it to work.','Return to the task with the ideas obtained.'],'https://create-labgest.uniud.it/Handbook/techniques/List/ProvAndMov.php']);
+CL[1].m.push(['i3','How Might We','Formulating a problem as a question “how might we…”. The phrase became established in Basadur\'s work at Procter & Gamble as the one most accepted by teams for posing problems. The source does not say who invented it. The steps below are generally accepted: the page does not describe the procedure.',['Take an observation about the user\'s problem.','Rewrite it as “How might we…?” without building in a solution.','Make several questions of different breadth.','Choose the question to generate ideas for.'],'https://en.wikipedia.org/wiki/Min_Basadur']);
+CL[1].m.push(['i4','Speculative\ndesign','Assumptions about a possible future, to provoke discussion (Dunne, Raby). This is not a feasibility check; critics argue that without working objects it is not design. It is suitable as a source of ideas that then go into the check steps.',['Take a technology that is only emerging.','Build a “what if” scenario together with the context in which it is used.','Present it as a description or an object that provokes debate.','From the reaction, choose ideas to check for feasibility.'],'https://en.wikipedia.org/wiki/Speculative_design']);
+CL[1].m.push(['i5','Cultural\nprobes','Task kits (map, postcard, camera, diary) that people use to record their own lives in order to inspire designers (Gaver, Dunne, Pacenti, 1999). Poorly suited to a requirements list: the data is subjective and participants may not return the kit.',['Assemble a kit with clear tasks.','Hand it out to participants and give them time.','Get the materials back.','Interpret as inspiration, not as statistics.'],'https://en.wikipedia.org/wiki/Cultural_probe']);
+CL[2].m.push(['i6','KJ method','Idea cards are sorted into groups by similarity and labeled without discussion until the diagram is ready (Jiro Kawakita).',['State the topic clearly.','Everyone writes one idea per card.','Read the cards aloud and hang them on the wall.','Silently sort them into groups.','Label the groups and remove duplicates.','Use arrows to show links between groups.'],'https://project-management.com/affinity-diagram-kawakita-jiro-or-kj-method/']);
+CL[1].m.push(['i7','Axiomatic\ndesign','Design as a chain of mappings: customer needs, functional requirements, design parameters (Suh, MIT). Independence axiom: a design parameter must not interfere with other functions. The first three steps are taken; manufacturing variables belong to implementation.',['Translate customer needs into functional requirements.','Build a hierarchy of functions.','Choose a design parameter for each function.','Build a “functions to parameters” matrix and check that the links do not cross.'],'https://highered.mheducation.com/sites/dl/free/0073398144/934758/Ch06AxiomaticDesign.pdf']);
+CL[2].m.push(['i8','Lotus\nblossom','A central theme in a square and eight petals with ideas; each petal becomes the center of a new flower (Matsumura).',['Draw a square with eight circles around it.','Write the theme in the square.','Write eight ideas in the circles.','Make each idea the center of a new flower.','Repeat until the ideas run out.'],'https://create-labgest.uniud.it/Handbook/techniques/List/Lotus.php']);
+CL[2].m.push(['i9','Reverse\nbrainstorming','Checking a short list of ideas with the question “what could go wrong” (Rawlinson, 1981). Applied to selected ideas, not to the first flow. It takes effort and can discourage people, so a constructive review is needed.',['Hold a brainstorm on the question “what could go wrong with this idea”.','Find groups of remarks with the same meaning.','Turn each group into one positive statement.','Repeat and finish with a review so as not to discourage people.'],'https://create-labgest.uniud.it/Handbook/techniques/List/NegativeBrainstorming.htm']);
+CL[1].m.push(['i10','Attribute\nlisting','An object is broken down into attributes, variants are sought for each and then combined (described since the 1930s, Crawford, 1954). Too many variants result, so the 7–8 main attributes are taken.',['Choose a product or process.','List its attributes: material, shape, market.','Keep the 7–8 most important.','Find alternatives for each.','Combine them and see whether a new approach appears.'],'https://create-labgest.uniud.it/Handbook/techniques/List/AttributeListing.php']);
+CL[0].m.push(['i11','Forced\nconnections','Deliberately linking two items that are not usually connected (Cocco, 1987; Osborn\'s example).',['Define the item that needs to be changed.','Choose another, seemingly unrelated item.','Compare them and derive a meaning that at first seems distant.'],'https://create-labgest.uniud.it/Handbook/techniques/List/ForcedAssociation.php']);
+CL[2].m.push(['i12','Disney\nmethod','The team takes turns playing the dreamer, the realist and the critic (Dilts, 1994). The realist asks about feasibility, the critic looks for risks.',['Dreamers come up with ideas without limits.','Realists evaluate and plan what is needed and whether it can be tested.','Critics constructively look for risks and gaps.','Open questions go back to the dreamers, and the cycle repeats.'],'https://unalab.enoll.org/wp-content/uploads/2019/11/Walt-Disney-Method-UNaLAB-Toolkit.pdf']);
+Object.assign(MAP,{i1:['a7'],i2:['a10'],i3:['a1'],i4:['a14'],i5:['a8'],i6:['a7'],i7:['a5'],i8:['a9'],i9:['s2'],i10:['a3','a13'],i11:['a13'],i12:['a7','s5']});
+CL[1].m.push(['v1','TELOS: five kinds\nof feasibility','Justification along five dimensions: technical, economic, legal, operational, schedule. Caveat: some of the source\'s statements have no references, and the technical and operational estimates are preliminary until there is a draft of the requirements.',['Technical: can it be built, are the knowledge and resources available.','Economic: cost versus expected value, estimates for optimistic, pessimistic and neutral scenarios.','Legal: no conflict with legal requirements.','Operational: how well it solves the problem and fits into processes.','Schedule: whether the solution will be in time to be useful.','If no significant market is found, the source considers that there is no project.'],'https://en.wikipedia.org/wiki/Feasibility_study']);
+CL[1].m.push(['v2','Stage-Gate','Work proceeds in stages with gates between them (Cooper, 1993). A committee evaluates against a catalog of criteria, mandatory and desirable, and chooses: go, kill, hold or rework.',['Describe the gate criteria in advance: mandatory and desirable.','At the end of a stage, collect the results and assess how much the uncertainty has decreased.','The committee decides: continue, stop, pause or rework.','Each next stage is more expensive than the previous one, so the gates come before costs grow.'],'https://www.inloox.com/company/blog/articles/product-development-with-the-stage-gate-r-process-part-3-procedure-and-structure/']);
+CL[1].m.push(['v3','Discovery-driven\nplanning','For projects with high uncertainty (McGrath, MacMillan, 1995): a plan is judged by what it teaches, not by how closely it matches the forecast. Funding is released by milestones. The source names the elements but does not explain how to build each document.',['Define success, including a “reverse” profit statement: from the required result backward.','Compare with the market and competitors.','Write down what is required of operations.','Keep a register of assumptions and check them.','Set checkpoints after which decisions about further funding are made.'],'https://en.wikipedia.org/wiki/Discovery-driven_planning']);
+CL[1].m.push(['v4','Idea evaluation\ncards','Two cards from the Money + Magic approach: “big versus quick and doable” and “market versus destruction of the company”; each evaluates one criterion. Weak source: a student project. It also notes that the final choice still relies on intuition.',['Choose a short list of ideas.','For each, ask: “what must be true for this to work”.','Place on the “big or quick and doable” map.','Place on the “market or destruction of the company” map.','Send the visible assumptions for checking.'],'https://www.ntnu.edu/documents/139799/1270604448/%C3%98ystein+Askeland_Designteori_H15_Evaluation+and+selection+of+early+stage+ideas+in+innovation+processes.pdf/ad67d5ef-54d0-47a8-9630-a26397397e9d']);
+Object.assign(MAP,{v1:['s5'],v2:['s8','s3'],v3:['s3','s2','s8'],v4:['s5']});
+CL[1].m.push(['j1','NM method\n(Nakayama)','Method of Masakazu Nakayama: an idea through analogy with nature or technology. It goes top-down from the required function, whereas in TRIZ the path starts from the situation. Secondary source (an article in TRIZ Journal); the assessment of the method is given by the article\'s author.',['Key word: briefly name the required function with a verb.','Analogy question: find a phenomenon in nature or technology that provides this function.','Basis question: find out the principle or mechanism of this phenomenon.','Design question: transfer the principle to your own task and obtain ideas.','Assembly: combine the ideas into a concrete design, taking conditions and constraints into account.'],'https://www.metodolog.ru/triz-journal/archives/2003/05/a/01.pdf']);
+CL[1].m.push(['j2','WSR: three\nviews','Three views of a problem: objective facts (Wuli), ways of seeing, modeling and acting (Shili), relations between people (Renli) (Gu, Zhu, China). Each has its own regularities, and none reduces to another. The source does not describe steps, so here this is a set of questions.',['Wuli: what objective facts and constraints are known?','Shili: how do we model the situation and what actions do we choose?','Renli: whose interests, relationships and habits affect the result?','Check that none of the three views is missed.'],'https://web3.isss.org/primer2/zhuwu3.html']);
+CL[2].m.push(['j3','SECI (Nonaka,\nTakeuchi)','Knowledge is converted between tacit and explicit forms in four modes (Nonaka, Takeuchi, Japan). A project needs externalization: writing tacit knowledge down as concepts and a document. Caveats: the model grew out of Japanese firms, is rigidly ordered and does not explain how ideas themselves are born.',['Socialization: sharing experience through observation and joint work.','Externalization: express knowledge in concepts, images or text so that others can use it.','Combination: assemble explicit knowledge into new forms.','Internalization: absorb explicit knowledge through practice.','For the spec, the main mode is externalization.'],'https://en.wikipedia.org/wiki/SECI_model_of_knowledge_dimensions']);
+Object.assign(MAP,{j1:['a2'],j2:['s5'],j3:['a13']});
+CL[1].m.push(['j4','Extenics\n(Cai Wen)','A Chinese theory (Cai Wen, 1983) on solving incompatible problems: an object is described by a triple “object, characteristic, value” and this is transformed to remove the contradiction. The source gives no general algorithm; the steps below retell the description and a worked example (choosing a hydro turbine), not a ready-made procedure.',['Describe the object as a triple: object, characteristic, value.','Find the incompatibility: which requirements do not agree at the current values.','Apply a transformation: extend, branch out or correlate characteristics and values.','Change values level by level within the constraints until the requirements agree.'],'https://www.mdpi.com/2227-7390/10/17/3132/htm']);
+Object.assign(MAP,{j4:['a4','a11']});
+var CLOFF={};CL.forEach(function(c,i){c.m.forEach(function(m){CLOFF[m[0]]=i})});
+var SPOT={n17:[560,-40],n19:[1000,-40],n16:[1340,420],n18:[1010,500],n20:[891,524],r2:[700,-40],r1:[850,-40],r3:[1370,220],r4:[1340,530],r5:[1125,505],t1:[810,780],t2:[915,780],t3:[1020,780],t4:[1125,780],t5:[1230,780],t6:[810,920],t7:[935,920],t8:[1060,920],v1:[1340,640],j2:[1470,330],v2:[494,536],v3:[1110,-40],v4:[1470,500],i9:[830,-130]};
+function kbNodes(){
+  var out=[],cnt={};
+  CL.forEach(function(c,i){
+    c.m.forEach(function(m){
+      var pr=(MAP[m[0]]||['a1'])[0],x,y;
+      if(SPOT[m[0]]){x=SPOT[m[0]][0];y=SPOT[m[0]][1]}
+      else{var j=cnt[pr]||0;cnt[pr]=j+1;x=330-120-j*125;y=-120+(+pr.slice(1)-1)*80}
+      out.push({id:m[0],kind:'method',cl:i,label:m[1],d:m[2],how:m[3],src:m[4]||'',x:x,y:y,r:16});
+    });
+  });
+  return out;
+}
+function kbEdges(){
+  Object.keys(MAP).forEach(function(id){
+    MAP[id].forEach(function(t,k){E.push({a:t,b:id,t:k?'rel':'cspoke',cl:CLOFF[id]})});
+  });
+}
+var S={st:{},notes:{},pos:{},custom:[],lv:2};
+var M={},NL=[],E=[],SEL=null,nodeEls=[],edgeEls=[],labEls={},Q='';
+var edgesG=$('#edges'),nodesG=$('#nodes'),world=$('#world'),svg=$('#svg'),stage=$('#stage');
+
+function baseNodes(){
+  var out=[{id:'hub',kind:'hub',label:'IDEAS',d:HUB_D,x:330,y:1190,r:42}];
+  APR.forEach(function(a,i){
+    out.push(Object.assign({},a,{kind:'approach',x:330,y:-120+i*80,r:22}));
+  });
+  STP.forEach(function(s){out.push(Object.assign({},s,{kind:'step',r:25,hw:75,hh:24}))});
+  EXT.forEach(function(x){out.push(Object.assign({},x,{kind:'extra',r:15}))});
+  return out;
+}
+function build(){
+  M={};NL=baseNodes().concat(kbNodes());
+  S.custom.forEach(function(c){NL.push({id:c.id,kind:'custom',label:c.label,d:'Own idea. Describe it in a note and attach it to the relevant check step.',x:c.x,y:c.y,r:16,parent:c.parent})});
+  NL.forEach(function(n){M[n.id]=n});
+  E=[];
+  kbEdges();{
+  APR.forEach(function(a){E.push({a:a.id,b:'s1',t:'feed'})});
+  for(var i=1;i<8;i++)E.push({a:'s'+i,b:'s'+(i+1),t:'flow'});
+  E.push({a:'s8',b:'s2',t:'loop',lab:'iteration'});
+  E.push({a:'hub',b:'s9',t:'resflow',lab:'the idea is good',lp:[385,1117]});
+  E.push({a:'s9',b:'s10',t:'resflow'});
+  E.push({a:'s10',b:'s11',t:'resflow'});
+  E.push({a:'s9',b:'s11',t:'resarc'});
+  E.push({a:'s8',b:'hub',t:'ret',lab:'cycle result',lt:.25});
+  EXT.forEach(function(x){x.to.forEach(function(s){E.push({a:x.id,b:s,t:'aux'})})});
+  APR.forEach(function(a){a.checks.forEach(function(s){E.push({a:a.id,b:s,t:'chk'})})});
+  }
+  S.custom.forEach(function(c){if(M[c.parent]&&M[c.id])E.push({a:c.parent,b:c.id,t:'aux'})});
+}
+
+function nodeSVG(n){
+  var lines=n.label.split('\n'),isR=n.kind==='step',shape,inner='';
+  var tsp=lines.map(function(t,i){return '<tspan x="0" dy="'+(i?15:0)+'">'+esc(t)+'</tspan>'}).join('');
+  if(isR){
+    var w=n.hw,h=n.hh,lx=-w+39;
+    shape='<rect class="pulse" x="'+(-w-4)+'" y="'+(-h-4)+'" width="'+(2*w+8)+'" height="'+(2*h+8)+'" rx="16"/>'+
+      '<rect class="ring" x="'+(-w-6)+'" y="'+(-h-6)+'" width="'+(2*w+12)+'" height="'+(2*h+12)+'" rx="18"/>'+
+      '<rect class="body" x="'+(-w)+'" y="'+(-h)+'" width="'+(2*w)+'" height="'+(2*h)+'" rx="12"/>';
+    inner='<circle class="nb" cx="'+(-w+20)+'" cy="0" r="11"/><text class="num" x="'+(-w+20)+'" y="1">'+n.num+'</text>'+
+      '<text class="slbl" x="'+lx+'" y="'+(lines.length>1?-3:5)+'">'+lines.map(function(t,i){return '<tspan x="'+lx+'" dy="'+(i?15:0)+'">'+esc(t)+'</tspan>'}).join('')+'</text>';
+  }else{
+    shape='<circle class="hit" r="'+(n.r+10)+'"/><circle class="pulse" r="'+(n.r+4)+'"/><circle class="ring" r="'+(n.r+6)+'"/><circle class="body" r="'+n.r+'"/>';
+    inner=n.kind==='hub'?'<text class="hubt" y="1">'+esc(n.label)+'</text>':'<text class="lbl" y="'+(n.r+17)+'">'+tsp+'</text>';
+  }
+  var dot='<circle class="nd" cx="'+(isR?n.hw-4:Math.round(n.r*.75))+'" cy="'+(isR?-n.hh+4:-Math.round(n.r*.75))+'" r="4.5"/>';
+  return '<g class="node k-'+n.kind+(n.cl!=null?' cl'+n.cl:'')+(n.res?' res':'')+'" data-id="'+n.id+'" data-st="0" tabindex="0" role="button" aria-label="'+esc(lines.join(' '))+'" transform="translate('+n.x+' '+n.y+')">'+shape+inner+dot+'</g>';
+}
+
+function P(p){return p[0].toFixed(1)+','+p[1].toFixed(1)}
+function edgeDist(n,ux,uy){
+  if(n.hw){var tx=Math.abs(ux)>1e-6?n.hw/Math.abs(ux):1e9,ty=Math.abs(uy)>1e-6?n.hh/Math.abs(uy):1e9;return Math.min(tx,ty)}
+  return n.r;
+}
+function trim(n,to,gap){
+  var dx=to[0]-n.x,dy=to[1]-n.y,l=Math.hypot(dx,dy)||1,ux=dx/l,uy=dy/l,d=edgeDist(n,ux,uy)+gap;
+  return [n.x+ux*d,n.y+uy*d];
+}
+function geom(e){
+  var a=M[e.a],b=M[e.b],c1,c2,cq,t=e.t;
+  if(t==='feed'&&b.x-a.x>=220){c1=[a.x+(b.x-a.x)*.4,a.y];c2=[b.x-110,b.y+(a.y-b.y)*.2]}
+  else if(t==='loop'){c1=[a.x+10,a.y-110];c2=[b.x,b.y+130]}
+  else if(t==='resarc'){c1=[a.x-190,a.y+30];c2=[b.x-190,b.y-30]}
+  else if(t==='ret'){c1=[a.x-200,a.y+250];c2=[b.x+200,b.y-250]}
+  else if(t==='chk'){var mx=(a.x+b.x)/2,my=(a.y+b.y)/2,l=Math.hypot(b.x-a.x,b.y-a.y);cq=[mx,my-Math.min(140,l*.28)]}
+  var s1=c1||cq||[b.x,b.y],s2=c2||cq||[a.x,a.y];
+  var arrow=(t==='feed'||t==='flow'||t==='resflow'||t==='resarc'||t==='loop'||t==='ret');
+  var sp=trim(a,s1,3),ep=trim(b,s2,arrow?8:3),d;
+  if(c1)d='M'+P(sp)+' C'+P(c1)+' '+P(c2)+' '+P(ep);
+  else if(cq)d='M'+P(sp)+' Q'+P(cq)+' '+P(ep);
+  else d='M'+P(sp)+' L'+P(ep);
+  var lab=null;
+  if(e.lab&&e.lp)lab=e.lp;
+  else if(e.lab&&c1){var u=e.lt||.5,w=1-u,k0=w*w*w,k1=3*w*w*u,k2=3*w*u*u,k3=u*u*u;lab=[k0*a.x+k1*c1[0]+k2*c2[0]+k3*b.x,k0*a.y+k1*c1[1]+k2*c2[1]+k3*b.y]}
+  else if(e.lab)lab=[(a.x+b.x)/2-44,(a.y+b.y)/2];
+  return {d:d,lab:lab};
+}
+function drawEdges(){
+  E.forEach(function(e,i){
+    var g=geom(e);edgeEls[i].setAttribute('d',g.d);
+    if(g.lab&&labEls[i]){labEls[i].setAttribute('x',g.lab[0].toFixed(1));labEls[i].setAttribute('y',(g.lab[1]+4).toFixed(1))}
+  });
+}
+function adjOf(id){
+  var s=new Set(),c=new Set();
+  E.forEach(function(e){
+    if(e.a===id){s.add(e.b);if(e.t==='chk')c.add(e.b)}
+    else if(e.b===id){s.add(e.a);if(e.t==='chk')c.add(e.a)}
+  });
+  return {adj:s,chk:c};
+}
+function paint(){
+  var o=SEL?adjOf(SEL):null;
+  nodeEls.forEach(function(p){
+    var n=p[0],el=p[1];
+    el.classList.toggle('sel',n.id===SEL);
+    el.classList.toggle('dim',(!!SEL&&n.id!==SEL&&!o.adj.has(n.id))||(!SEL&&!!Q&&plain(n).toLowerCase().indexOf(Q)<0));
+    el.classList.toggle('chk',!!SEL&&o.chk.has(n.id));
+    el.classList.toggle('hasnote',!!S.notes[n.id]);
+    el.setAttribute('data-st',S.st[n.id]||0);
+  });
+  edgeEls.forEach(function(el,i){
+    var e=E[i],inc=!!SEL&&(e.a===SEL||e.b===SEL);
+    if(e.t==='chk'||e.t==='rel')el.classList.toggle('on',inc);
+    else el.classList.toggle('dim',(!!SEL&&!inc)||(!SEL&&!!Q));
+  });
+}
+function render(){
+  build();
+  var paths=E.map(function(e){return '<path class="edge e-'+e.t+(e.cl!=null?' cl'+e.cl:'')+'"/>'}).join('');
+  var labs=E.map(function(e,i){return e.lab?'<text class="elab" data-for="'+i+'">'+esc(e.lab)+'</text>':''}).join('');
+  edgesG.innerHTML=paths+labs;
+  edgeEls=Array.prototype.slice.call(edgesG.querySelectorAll('path'));
+  labEls={};edgesG.querySelectorAll('.elab').forEach(function(t){labEls[t.getAttribute('data-for')]=t});
+  nodesG.innerHTML=NL.map(nodeSVG).join('');
+  nodeEls=NL.map(function(n){return [n,nodesG.querySelector('[data-id="'+n.id+'"]')]});
+  drawEdges();paint();
+}
+
+/* ---------- panel ---------- */
+function plain(n){return n.label.replace(/\n/g,' ')}
+function chip(id){
+  var n=M[id];if(!n)return '';
+  return '<button type="button" class="chip c-'+n.kind+(n.cl!=null?' cl'+n.cl:'')+(n.res?' res':'')+'" data-go="'+id+'">'+(n.kind==='step'?'<b>'+n.num+'</b>':'')+esc(plain(n))+'</button>';
+}
+function srcLine(n){
+  if(n.kind==='step'&&!n.src)return '';
+  if(n.kind==='extra'||n.kind==='approach'||n.kind==='step')return n.src?'<p class="src">Based on principles from pages: '+n.src.split(' ').map(function(u){return '<a href="'+esc(u)+'" target="_blank" rel="noopener">'+esc(u.replace(/^https?:\/\/(www\.)?/,'').split('/')[0])+'</a>'}).join(', ')+'. The rule itself is formulated in the project; it is not a ready-made method from the source.</p>':'<p class="src">Not checked against the primary source.</p>';
+  var t=n.src?'Description checked against pages: '+n.src.split(' ').map(function(u){return '<a href="'+esc(u)+'" target="_blank" rel="noopener">'+esc(u.replace(/^https?:\/\/(www\.)?/,'').split('/')[0])+'</a>'}).join(', ')+'.':'Not checked against the primary source. The method is presented according to the commonly accepted description.';
+  return '<p class="src">'+t+'</p>';
+}
+function renderPanel(){
+  var pc=$('#pc');
+  if(!SEL){
+    pc.innerHTML='<p class="kind">How to read the map</p><ul class="how">'+
+      '<li>Blue nodes: ways to generate an idea, with its methods to the left of each. Arrows lead from approaches to the first check step, the hypothesis.</li>'+
+      '<li>Idea ring: approaches, eight teal check steps and the return to a new idea. The block of spec, test cases and prompt is set off by a frame: it is needed only if the idea passed the check.</li>'+
+      '<li>Teal chain: eight feasibility check steps. The decision returns to the second step (iteration), and the cycle result arrives at IDEAS. Only an approved idea goes further, into the three lilac result steps: spec, test cases and implementation prompt.</li>'+
+      '<li>Gray nodes: things that are easy to forget. Each is connected to the step where it matters most.</li>'+
+      '<li>To the left of the approaches, in a row, are their methods from the academic literature. Click a method: essence, application steps and links. The method\'s color shows the literature section.</li>'+
+      '<li>Click an approach: the check steps that matter most for it pulse in orange.</li>'+
+      '<li>The map can be dragged and zoomed. Nodes can only be clicked.</li></ul>';
+    return;
+  }
+  var n=M[SEL],chk=[],rel=[];
+  E.forEach(function(e){
+    if(e.a!==SEL&&e.b!==SEL)return;
+    var o=e.a===SEL?e.b:e.a;
+    (e.t==='chk'?chk:rel).push(o);
+  });
+  rel=rel.filter(function(x,i){return rel.indexOf(x)===i});
+  pc.innerHTML='<p class="kind c-'+n.kind+(n.cl!=null?' cl'+n.cl:'')+(n.res?' res':'')+'">'+(n.res?'Project result':KIND[n.kind])+'</p><h2>'+esc(plain(n))+'</h2><p class="desc">'+esc(n.d)+'</p>'+(n.how?'<section><h3>How to apply</h3><ol class="steps">'+n.how.map(function(s){return '<li>'+esc(s)+'</li>'}).join('')+'</ol></section>':'')+((n.kind==='method'||n.kind==='extra'||n.kind==='approach'||n.kind==='step')?srcLine(n):'')+
+    (chk.length?'<section><h3>'+(n.kind==='approach'?'Linked check steps':'Key step for approaches')+'</h3>'+(n.why?'<p class="why">'+esc(n.why)+'</p>':'')+'<div class="chips">'+chk.map(chip).join('')+'</div></section>':'')+
+    (rel.length?'<section><h3>Links</h3><div class="chips">'+rel.map(chip).join('')+'</div></section>':'');
+}
+function select(id){
+  SEL=id&&M[id]?id:null;
+  paint();renderPanel();
+  $('#chip').hidden=!SEL;
+  if(SEL)$('#chipt').textContent=plain(M[SEL]);
+}
+$('#pc').addEventListener('click',function(e){
+  var go=e.target.closest('[data-go]');if(go){select(go.getAttribute('data-go'));return}
+});
+$('#pc').addEventListener('input',function(e){
+  if(e.target.id==='note'&&SEL){var v=e.target.value;if(v.trim())S.notes[SEL]=v;else delete S.notes[SEL];touch();paint()}
+});
+$('#chipgo').addEventListener('click',function(){$('#panel').scrollIntoView({behavior:'smooth',block:'start'})});
+document.addEventListener('keydown',function(e){
+  if(e.key==='Escape'&&document.activeElement&&document.activeElement.tagName!=='TEXTAREA'&&document.activeElement.tagName!=='INPUT')select(null);
+});
+nodesG.addEventListener('keydown',function(e){
+  var g=e.target.closest&&e.target.closest('.node');
+  if(g&&(e.key==='Enter'||e.key===' ')){e.preventDefault();select(g.getAttribute('data-id'))}
+});
+
+/* ---------- custom nodes ---------- */
+function wrap(s){
+  if(s.length<=14)return s;
+  var mid=Math.floor(s.length/2),best=-1;
+  for(var i=0;i<s.length;i++)if(s[i]===' '&&(best<0||Math.abs(i-mid)<Math.abs(best-mid)))best=i;
+  return best<0?s:s.slice(0,best)+'\n'+s.slice(best+1);
+}
+function place(parent){
+  var p=M[parent];
+  for(var i=0;i<48;i++){
+    var ang=(-60+i*47)*Math.PI/180,dist=100+Math.floor(i/8)*32;
+    var x=Math.round(p.x+Math.cos(ang)*dist),y=Math.round(p.y+Math.sin(ang)*dist);
+    if(x<BX0+40||x>BX1-40||y<BY0+40||y>BY1-60)continue;
+    if(NL.every(function(n){return Math.hypot(n.x-x,n.y-y)>(n.hw?110:78)}))return [x,y];
+  }
+  return [Math.min(BX1-40,p.x+100),Math.min(BY1-60,p.y+100)];
+}
+function removeCustom(id){
+  var kill=new Set([id]),grew=true;
+  while(grew){grew=false;S.custom.forEach(function(c){if(!kill.has(c.id)&&kill.has(c.parent)){kill.add(c.id);grew=true}})}
+  var parent=M[id].parent;
+  S.custom=S.custom.filter(function(c){return !kill.has(c.id)});
+  kill.forEach(function(k){delete S.st[k];delete S.notes[k];delete S.pos[k]});
+  render();select(parent||null);touch();
+}
+
+/* ---------- view: pan, zoom, drag ---------- */
+var view={k:1,x:0,y:0},userMoved=false,curView='all';
+var REG={all:[-780,-220,2340,1480],apr:[-780,-200,1140,1450],chk:[400,-220,1180,900],tz:[320,670,1230,480]};
+function applyView(){world.style.transform='translate('+view.x.toFixed(1)+'px,'+view.y.toFixed(1)+'px) scale('+view.k.toFixed(4)+')'}
+function setView(name,anim){
+  curView=name;var r=stage.getBoundingClientRect(),g=REG[name]||REG.all;
+  var k=Math.min(r.width/g[2],r.height/g[3])*.96;
+  view.k=k;view.x=r.width/2-(g[0]+g[2]/2)*k;view.y=r.height/2-(g[1]+g[3]/2)*k;
+  stage.classList.toggle('anim',!!anim);applyView();userMoved=false;
+}
+function zoomAt(cx,cy,f){
+  var r=stage.getBoundingClientRect(),nk=Math.max(.25,Math.min(3,view.k*f));f=nk/view.k;
+  var px=cx-r.left,py=cy-r.top;
+  view.x=px-(px-view.x)*f;view.y=py-(py-view.y)*f;view.k=nk;applyView();
+}
+function viewList(){
+  return [['all','Whole map'],['apr','Approaches and methods'],['chk','Check steps'],['tz','Spec, test cases, prompt']];
+}
+function renderViews(){$('#views').innerHTML=viewList().map(function(v){return '<button type="button" data-view="'+v[0]+'">'+esc(v[1])+'</button>'}).join('')}
+$('#views').addEventListener('click',function(e){var b=e.target.closest('[data-view]');if(b)setView(b.getAttribute('data-view'),true)});
+function renderLegend(){
+  $('#legend').innerHTML='<span><i class="dot d-apr"></i>Approach</span><span><i class="dot d-stp"></i>Check step</span><span><i class="dot d-res"></i>Result: spec, test cases, prompt</span><span><i class="dot d-ext"></i>Do not forget</span>'+'<span class="sep">Method, colored by literature section:</span>'+CL.map(function(c,i){return '<span><i class="dot cl'+i+'"></i>'+esc(c.name.replace(/\n/g,' '))+'</span>'}).join('');
+}
+function init(){
+  $('#frames').innerHTML='<rect x="440" y="690" width="1090" height="440" rx="16" class="frame"/><text x="496" y="720" class="frame-t">SPEC, TEST CASES AND PROMPT · ONLY IF THE IDEA IS GOOD</text>';
+  render();renderPanel();renderLegend();renderViews();$('#chip').hidden=true;
+  setView(stage.getBoundingClientRect().width<700?'apr':'all',false);
+}
+function zc(f){var r=stage.getBoundingClientRect();stage.classList.add('anim');zoomAt(r.left+r.width/2,r.top+r.height/2,f);userMoved=true}
+$('#zin').addEventListener('click',function(){zc(1.3)});
+$('#zout').addEventListener('click',function(){zc(1/1.3)});
+svg.addEventListener('wheel',function(e){
+  e.preventDefault();stage.classList.remove('anim');zoomAt(e.clientX,e.clientY,Math.exp(-e.deltaY*.0015));userMoved=true;
+},{passive:false});
+var ptrs=new Map(),drag=null,pin=null;
+svg.addEventListener('pointerdown',function(e){
+  if(e.button>0)return;
+  ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY});
+  try{svg.setPointerCapture(e.pointerId)}catch(_){}
+  stage.classList.remove('anim');
+  if(ptrs.size===1){
+    var g=e.target.closest&&e.target.closest('.node');
+    drag={id:g?g.getAttribute('data-id'):null,sx:e.clientX,sy:e.clientY,vx:view.x,vy:view.y,moved:false};
+    if(drag.id){drag.nx=M[drag.id].x;drag.ny=M[drag.id].y}
+  }else if(ptrs.size===2){
+    drag=null;var v=Array.from(ptrs.values());
+    pin={d:Math.hypot(v[0].x-v[1].x,v[0].y-v[1].y)||1,k:view.k};
+  }
+});
+svg.addEventListener('pointermove',function(e){
+  var p=ptrs.get(e.pointerId);if(!p)return;
+  p.x=e.clientX;p.y=e.clientY;
+  if(ptrs.size===2&&pin){
+    var v=Array.from(ptrs.values()),d=Math.hypot(v[0].x-v[1].x,v[0].y-v[1].y);
+    zoomAt((v[0].x+v[1].x)/2,(v[0].y+v[1].y)/2,Math.max(.25,Math.min(3,pin.k*d/pin.d))/view.k);userMoved=true;return;
+  }
+  if(!drag)return;
+  var dx=e.clientX-drag.sx,dy=e.clientY-drag.sy;
+  if(!drag.moved&&Math.hypot(dx,dy)<5)return;
+  drag.moved=true;
+  view.x=drag.vx+dx;view.y=drag.vy+dy;userMoved=true;applyView();
+});
+function up(e){
+  ptrs.delete(e.pointerId);if(ptrs.size<2)pin=null;
+  if(!drag||ptrs.size>0)return;
+  if(!drag.moved)select(drag.id);
+  drag=null;
+}
+svg.addEventListener('pointerup',up);
+svg.addEventListener('pointercancel',up);
+if(window.ResizeObserver)new ResizeObserver(function(){if(!userMoved)setView(curView,false)}).observe(stage);
+
+/* ---------- persistence ---------- */
+var SYNC={wait:'Connecting to storage…',save:'Saving…',live:'Saved automatically',local:'Stored only in this browser',err:'Could not save',ro:'View only: changes are not saved',slow:'Storage is not responding, edits may not be saved'};
+function setSync(k){var el=$('#sync');el.textContent=SYNC[k];el.setAttribute('data-k',k)}
+var dbRef=null,dirty=false,saving=false,timer=null,LS='idei-state-v1';
+function touch(){dirty=true;setSync('save');clearTimeout(timer);timer=setTimeout(flush,700)}
+async function flush(){
+  if(saving)return;
+  saving=true;dirty=false;
+  try{
+    var snap=JSON.parse(JSON.stringify(S));
+    if(dbRef)await dbRef.set(snap);else{try{localStorage.setItem(LS,JSON.stringify(snap))}catch(_){}}
+    if(!dirty)setSync(dbRef?'live':'local');
+  }catch(err){setSync(err&&err.code==='invalid_argument'?'ro':'err')}
+  saving=false;
+  if(dirty)flush();
+}
+function applyRemote(d){
+  S.st=d.st||{};S.notes=d.notes||{};S.lv=2;S.pos=d.lv===2?(d.pos||{}):{};S.custom=Array.isArray(d.custom)?d.custom:[];
+  var keep=SEL;render();SEL=keep&&M[keep]?keep:null;paint();
+  if(!(document.activeElement&&document.activeElement.id==='note'))renderPanel();
+  $('#chip').hidden=!SEL;if(SEL)$('#chipt').textContent=plain(M[SEL]);
+}
+async function connect(){
+  var db=null;
+  try{if(window.claude&&window.claude.use)db=await window.claude.use('db')}catch(_){}
+  if(!db){
+    try{var raw=localStorage.getItem(LS);if(raw)applyRemote(JSON.parse(raw))}catch(_){}
+    setSync('local');return;
+  }
+  dbRef=db.doc('state/main');
+  var slow=setTimeout(function(){setSync('slow')},10000);
+  dbRef.onSnapshot(function(snap){
+    if(!snap.metadata.fromCache)clearTimeout(slow);
+    if(snap.exists&&!dirty&&!saving&&!snap.metadata.hasPendingWrites&&!drag)applyRemote(snap.data());
+    if(!dirty&&!saving)setSync('live');
+  },function(){clearTimeout(slow);setSync('err')});
+}
+
+init();
+connect();
+})();
+</script>
