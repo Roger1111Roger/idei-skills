@@ -30,7 +30,7 @@ Forbidden themes (shared list, do not touch these themes in any round, in any di
 
 Step 0 (before any round): write down the ten ideas that come to mind first for this situation. They, and their whole themes, are forbidden too, in everything below. If a later idea turns out to be one of the forbidden themes under another name, drop it.
 
-Round 1: produce <N> raw ideas (N = 10 to 20, given below). Judgement is deferred while generating: no filtering, one or two lines per idea, name the card step that produced it. Inventing is allowed and expected, as far as the method allows: aim at a deliberately uneven pool, most ideas ordinary, a good share bold, a few absurd. If the method is analytic (the card asks for facts or logic), stay inside its logic. Then mark each idea OBVIOUS (first thing that comes to mind, or surely exists already) or NEW. Merge duplicates and ideas on the same theme: keep only the strongest of them. Keep about one in five to one in ten, at least 4. Do not rescue an OBVIOUS idea unless you can say what makes it different.
+Round 1: produce <N> raw ideas (N = 10 to 20, given below). Judgement is deferred while generating: no filtering, one or two lines per idea, name the card step that produced it. Inventing is allowed and expected, as far as the method allows: aim at a deliberately uneven pool, most ideas ordinary, a good share bold, a few unconventional. If the method is analytic (the card asks for facts or logic), stay inside its logic. Then mark each idea OBVIOUS (first thing that comes to mind, or surely exists already) or NEW. Merge duplicates and ideas on the same theme: keep only the strongest of them. Keep about one in five to one in ten, at least 4. Do not rescue an OBVIOUS idea unless you can say what makes it different.
 
 Round 2: take the survivors as material and apply the same method again: combine, invert, push to an extreme, transfer to another field. Produce <N> new raw ideas, each marked with the survivor numbers it builds on (or NEW). Mark, merge and keep as in round 1, and also drop anything that repeats a theme already among the survivors.
 
@@ -38,7 +38,7 @@ Final: choose exactly 10 ideas from the survivors of both rounds, ranked best fi
 
 Do not search the web. Do not judge feasibility.
 
-Write everything (step 0 with its ten, both raw lists with marks, the survivors of each round) to <RUN_DIR>/<method id>.md. Return only: the final ten, and per round the counts raw / dropped / kept. If you cannot write the file, return the full raw lists as well.
+Save your work as you go, so a cut-off answer loses nothing: after step 0, after round 1 and after round 2, write everything so far (step 0 with its ten, the raw lists with marks, the survivors) to <RUN_DIR>/<method id>.md with the Write tool, which replaces the file each time. The folder already exists. Use no shell commands. Return only: the final ten, and per round the counts raw / dropped / kept. If you cannot write the file, return the full raw lists as well.
 ```
 
 If an agent is stopped by an API error, start it again once with the same brief. If it fails again, start the reserve method instead (same brief, same ban list). If that fails too, use what the agents wrote to their files and tell the user plainly what was lost.
@@ -63,8 +63,9 @@ Ideas:
 
 ```
 Idea: <one paragraph>. Search the web (WebSearch) for existing products, services, papers or projects that already do this or something close; try at least three different queries, in English and in the user's language. Return at most five findings, each with a link and one line on how it differs from the idea.
-Then open the page of the single closest existing thing (WebFetch) and read what it actually does; do not decide from a search snippet. Say if the page could not be opened. Answer in one sentence: what does the idea do that the closest thing does not, in function and not in name, framing or looks?
-Verdict: EXISTS (does the same, or the only difference is naming, framing or looks), SIMILAR (close, with a real functional difference, which you state), or NOTHING FOUND (list the queries tried; absence of results is not proof). Do not invent links. Do not evaluate whether the idea is good.
+Then open the page of the single closest existing thing (WebFetch) and read what it actually does; do not decide from a search snippet. If the first page fails to open (access denied, proxy, timeout), do not try more pages: say "judged from search snippets, page could not be opened" in the verdict and go on.
+Compare by core function. List the idea's core functions (what the user actually does with it and gets from it), then list what the closest thing already does of that list. Answer in one sentence: which core function of the idea does the closest thing not do?
+Verdict: EXISTS (the closest thing already does the core function; extras, naming, framing or looks do not count as a difference), SIMILAR (at least one core function is really missing in the closest thing, and you name it), or NOTHING FOUND (list the queries tried; absence of results is not proof). Do not invent links. Do not evaluate whether the idea is good.
 ```
 
 ## No Agent tool
