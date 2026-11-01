@@ -9,7 +9,7 @@ updated: YYYY-MM-DD
 origin:
   approach: ""           # catalog approach id (a1..a14), if any
   method: ""             # catalog method id, or several joined with a comma
-  round: 0               # 1 or 2 if it came from idei-generate rounds; 0 if the user's own
+  round: 0               # 0 if the user's own; otherwise the fight cycle number (1, 2, ...)
   run: ""                # ideas/_runs/<date>-<topic>/ folder, if any
 prior_art: ""            # EXISTS | SIMILAR | NOTHING FOUND | not searched
 iteration: 0             # how many times we went back to step 2
