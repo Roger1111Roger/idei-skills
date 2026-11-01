@@ -18,7 +18,7 @@ Pass the returned themes to every method agent as the shared ban list.
 ## Method agent (one per method, three in parallel)
 
 ```
-You run ONE idea-generation method on a given situation, in three rounds. Work alone.
+You run ONE idea-generation method on a given situation, in two rounds. Work alone.
 
 Situation (user answers; lines marked [assumed] are guesses):
 <context block>
@@ -34,16 +34,14 @@ Round 1: produce <N> raw ideas (N = 10 to 20, given below). Judgement is deferre
 
 Round 2: take the survivors as material and apply the same method again: combine, invert, push to an extreme, transfer to another field. Produce <N> new raw ideas, each marked with the survivor numbers it builds on (or NEW). Mark, merge and keep as in round 1, and also drop anything that repeats a theme already among the survivors.
 
-Round 3: repeat round 2 with the survivors of rounds 1 and 2.
-
-Final: choose exactly 10 ideas from the survivors of all rounds, ranked best first. No two on the same theme, none on a forbidden theme. If the method cannot honestly give 10, give fewer and say so; do not pad. For each: one or two lines and what makes it different from the obvious.
+Final: choose exactly 10 ideas from the survivors of both rounds, ranked best first. No two on the same theme, none on a forbidden theme. If the method cannot honestly give 10, give fewer and say so; do not pad. For each: one or two lines and what makes it different from the obvious.
 
 Do not search the web. Do not judge feasibility.
 
-Write everything (step 0 with its ten, all raw lists with marks, the survivors of each round) to <RUN_DIR>/<method id>.md. Return only: the final ten, and per round the counts raw / dropped / kept. If you cannot write the file, return the full raw lists as well.
+Write everything (step 0 with its ten, both raw lists with marks, the survivors of each round) to <RUN_DIR>/<method id>.md. Return only: the final ten, and per round the counts raw / dropped / kept. If you cannot write the file, return the full raw lists as well.
 ```
 
-If an agent is stopped by an API error, start it again once with the same brief. If it fails again, take what it already wrote to its file, use that, and tell the user plainly what was lost.
+If an agent is stopped by an API error, start it again once with the same brief. If it fails again, start the reserve method instead (same brief, same ban list). If that fails too, use what the agents wrote to their files and tell the user plainly what was lost.
 
 N by method type: 20 for quantity or association methods (brainstorming family, random stimuli, provocation, forced connections, lotus blossom, analogies); 15 by default; 10 for analytic methods (first principles, TRIZ, gap analysis, constraints).
 
@@ -65,10 +63,10 @@ Ideas:
 
 ```
 Idea: <one paragraph>. Search the web (WebSearch) for existing products, services, papers or projects that already do this or something close; try at least three different queries, in English and in the user's language. Return at most five findings, each with a link and one line on how it differs from the idea.
-Then name the single closest existing thing and answer in one sentence: what does the idea do that the closest thing does not, in function and not in name, framing or looks?
+Then open the page of the single closest existing thing (WebFetch) and read what it actually does; do not decide from a search snippet. Say if the page could not be opened. Answer in one sentence: what does the idea do that the closest thing does not, in function and not in name, framing or looks?
 Verdict: EXISTS (does the same, or the only difference is naming, framing or looks), SIMILAR (close, with a real functional difference, which you state), or NOTHING FOUND (list the queries tried; absence of results is not proof). Do not invent links. Do not evaluate whether the idea is good.
 ```
 
 ## No Agent tool
 
-If the Agent tool is not available (some chat surfaces), do the same sequentially in your own reply: finish each method's three rounds completely before starting the next, and do not reuse ideas from another method. Say once that isolation is weaker in this mode.
+If the Agent tool is not available (some chat surfaces), do the same sequentially in your own reply: finish each method's two rounds completely before starting the next, and do not reuse ideas from another method. Say once that isolation is weaker in this mode.
