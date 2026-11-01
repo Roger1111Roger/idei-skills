@@ -8,7 +8,10 @@ created: YYYY-MM-DD
 updated: YYYY-MM-DD
 origin:
   approach: ""           # catalog approach id (a1..a14), if any
-  method: ""             # catalog method id, if any
+  method: ""             # catalog method id, or several joined with a comma
+  round: 0               # 1 or 2 if it came from idei-generate rounds; 0 if the user's own
+  run: ""                # ideas/_runs/<date>-<topic>/ folder, if any
+prior_art: ""            # EXISTS | SIMILAR | NOTHING FOUND | not searched
 iteration: 0             # how many times we went back to step 2
 ---
 
@@ -21,6 +24,10 @@ What it is, for whom, which problem it removes. In the user's own words.
 ## Origin
 
 How the idea came about: approach, method, what was done. Links to catalog cards.
+
+## Prior art
+
+Findings from the search with links, and what makes this idea different. Empty if not searched.
 
 ## Hypothesis
 

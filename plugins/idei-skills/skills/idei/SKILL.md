@@ -16,7 +16,7 @@ Rules for every skill in this plugin (keep them in mind throughout):
 
 1. **Look at the registry.** Read the start of `ideas/*/idea.md` (fields `title`, `status`, `iteration`) in the working folder. No `ideas/` folder means no ideas yet. Show a short list.
 2. **Find out what the user wants and hand over:**
-   - **New idea.** If the context is unclear, ask at most five questions: what you do or your field; for whom; what hurts or what to improve; constraints (time, money, skills, rules); what was already tried. Then skill `idei-generate`.
+   - **New idea.** If the context is unclear, hand over to `idei-generate`, which asks ten context questions in one message and fills unanswered ones with labeled assumptions.
    - **The user brings their own idea.** Create a record from `${CLAUDE_PLUGIN_ROOT}/templates/idea.md` (status `draft`, empty `origin`, `language` set to the user's language) and hand it to `idei-check`.
    - **Continue an existing one.** By status: `draft` and `checking` go to `idei-check`; `approved`: say that next, optionally, come the spec and test cases (`idei-spec`), then the implementation prompt (`idei-prompt`); `rejected` and `parked`: show the reason from `check.md` and offer to return to the idea or start a new one.
 3. **Statuses.** `draft → checking → approved | rejected | parked`. Only `idei-check` sets `approved`, `rejected` or `parked`, from the step 8 decision. Never start the spec, cases or prompt for an idea that is not `approved`: explain that a check comes first and offer it.
