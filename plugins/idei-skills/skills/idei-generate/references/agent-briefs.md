@@ -2,6 +2,19 @@
 
 Every agent is isolated: it gets only what is written in its brief and never sees the output of another agent. This keeps the methods from mixing their ideas. Replace `<CLAUDE_PLUGIN_ROOT>` with the real absolute path of the plugin folder (take it from `${CLAUDE_PLUGIN_ROOT}` in SKILL.md): an agent cannot resolve the variable itself. `<RUN_DIR>` is `ideas/_runs/<date>-<topic>/` in the user's working folder.
 
+## Scout agent (one, runs before the method agents)
+
+Finds the themes every model reaches for first, so the method agents can stay away from them.
+
+```
+Situation (user answers; lines marked [assumed] are guesses):
+<context block>
+
+Write the 15 ideas that come to mind first for this situation, fast, without a method. Then group them into themes (a theme is a shared core mechanic or image, for example "notes that fade like a pet"). Return only the list of themes, each as a short name plus a one-line description. No ideas, no ranking, no web search.
+```
+
+Pass the returned themes to every method agent as the shared ban list.
+
 ## Method agent (one per method, three in parallel)
 
 ```
@@ -12,7 +25,10 @@ Situation (user answers; lines marked [assumed] are guesses):
 
 Method card: read <CLAUDE_PLUGIN_ROOT>/catalog/methods/<id>.md and follow its "How to apply" steps literally, in every round. Source rules: <CLAUDE_PLUGIN_ROOT>/catalog/PROVENANCE.md.
 
-Step 0 (before any round): write down the three ideas that come to mind first for this situation. They, and their whole themes, are forbidden in everything below.
+Forbidden themes (shared list, do not touch these themes in any round, in any disguise):
+<scout themes>
+
+Step 0 (before any round): write down the ten ideas that come to mind first for this situation. They, and their whole themes, are forbidden too, in everything below. If a later idea turns out to be one of the forbidden themes under another name, drop it.
 
 Round 1: produce <N> raw ideas (N = 10 to 20, given below). Judgement is deferred while generating: no filtering, one or two lines per idea, name the card step that produced it. Inventing is allowed and expected, as far as the method allows: aim at a deliberately uneven pool, most ideas ordinary, a good share bold, a few absurd. If the method is analytic (the card asks for facts or logic), stay inside its logic. Then mark each idea OBVIOUS (first thing that comes to mind, or surely exists already) or NEW. Merge duplicates and ideas on the same theme: keep only the strongest of them. Keep about one in five to one in ten, at least 4. Do not rescue an OBVIOUS idea unless you can say what makes it different.
 
@@ -24,8 +40,10 @@ Final: choose exactly 10 ideas from the survivors of all rounds, ranked best fir
 
 Do not search the web. Do not judge feasibility.
 
-Write everything (step 0, all raw lists with marks, the survivors of each round) to <RUN_DIR>/<method id>.md. Return only: the final ten, and per round the counts raw / dropped / kept. If you cannot write the file, return the full raw lists as well.
+Write everything (step 0 with its ten, all raw lists with marks, the survivors of each round) to <RUN_DIR>/<method id>.md. Return only: the final ten, and per round the counts raw / dropped / kept. If you cannot write the file, return the full raw lists as well.
 ```
+
+If an agent is stopped by an API error, start it again once with the same brief. If it fails again, take what it already wrote to its file, use that, and tell the user plainly what was lost.
 
 N by method type: 20 for quantity or association methods (brainstorming family, random stimuli, provocation, forced connections, lotus blossom, analogies); 15 by default; 10 for analytic methods (first principles, TRIZ, gap analysis, constraints).
 
@@ -46,7 +64,9 @@ Ideas:
 ## Prior-art agent (one per finalist, parallel)
 
 ```
-Idea: <one paragraph>. Search the web (WebSearch) for existing products, services, papers or projects that already do this or something close. Return at most five findings, each with a link and one line on how it differs from the idea. Verdict: EXISTS (does the same), SIMILAR (close but different in <what>), or NOTHING FOUND (say which queries were tried; absence of results is not proof). Do not invent links. Do not evaluate whether the idea is good.
+Idea: <one paragraph>. Search the web (WebSearch) for existing products, services, papers or projects that already do this or something close; try at least three different queries, in English and in the user's language. Return at most five findings, each with a link and one line on how it differs from the idea.
+Then name the single closest existing thing and answer in one sentence: what does the idea do that the closest thing does not, in function and not in name, framing or looks?
+Verdict: EXISTS (does the same, or the only difference is naming, framing or looks), SIMILAR (close, with a real functional difference, which you state), or NOTHING FOUND (list the queries tried; absence of results is not proof). Do not invent links. Do not evaluate whether the idea is good.
 ```
 
 ## No Agent tool
