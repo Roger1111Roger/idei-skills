@@ -26,7 +26,11 @@ Situation (user answers; lines marked [assumed] are guesses):
 Method card: read <CLAUDE_PLUGIN_ROOT>/catalog/methods/<id>.md and follow its "How to apply" steps literally, in every round. Source rules: <CLAUDE_PLUGIN_ROOT>/catalog/PROVENANCE.md.
 
 Forbidden themes (shared list, do not touch these themes in any round, in any disguise):
-<scout themes>
+<scout themes, plus themes of ideas the user already saw and did not pick>
+
+Seeds (only from the second cycle on; omit this block in the first): ideas the user liked, with their comments:
+<seeds>
+Use the seeds as material in every round: develop them, push them in the direction of the comments, and still add fresh ideas. Never copy a seed unchanged.
 
 Step 0 (before any round): write down the ten ideas that come to mind first for this situation. They, and their whole themes, are forbidden too, in everything below. If a later idea turns out to be one of the forbidden themes under another name, drop it.
 
@@ -45,19 +49,23 @@ If an agent is stopped by an API error, start it again once with the same brief.
 
 N by method type: 20 for quantity or association methods (brainstorming family, random stimuli, provocation, forced connections, lotus blossom, analogies); 15 by default; 10 for analytic methods (first principles, TRIZ, gap analysis, constraints).
 
-## Fight agent (one)
+## Fight agent (one; in deep mode two stages)
 
-Gets the 30 final ideas of the three method agents, pooled and shuffled, without method names, plus the situation.
+Gets the final ideas of the method agents, pooled and shuffled, without method names, plus the situation. In light mode it gets the ten ideas of the single agent. In deep mode run it first once per group of about 30 pooled ideas, then once more on the winners of all groups.
 
 ```
 Situation: <context block>
-Criteria: <the user's criteria if the user named any; otherwise: fit with the pain (question 3), fit with the success definition (7), fit with the stated risk appetite (10), and how far the idea is from the obvious>
 
-Below are <M> ideas from three independent sources. Merge ideas that are the same idea in different words (note how many were merged). Rank the rest by the criteria. Return the top 8 in order, each with one line saying why it beats the ones below it. This is a ranking by the stated criteria only: do not judge feasibility, do not invent facts about markets or users, do not search the web.
+Below are <M> ideas from independent sources. Merge ideas that are the same idea in different words (note how many were merged). Score every remaining idea on two axes, 1 to 3 each:
+- Novelty: 3 = far from the obvious, 1 = the first thing everyone thinks of.
+- Buildability: 3 = the user can build a first version with the assets and time stated in the situation, 1 = clearly out of reach. This is a rough estimate against the stated assets, not a feasibility check.
+Rank by the sum, ties by novelty. Return the top <K> in order (K = 8; in light mode all of them), each with: scores, and one line saying why it ranks above the ones below it. Do not invent facts about markets or users, do not search the web.
 
 Ideas:
 <numbered list>
 ```
+
+After the prior-art step the orchestrator adds a third score, analogs: NOTHING FOUND = 3, SIMILAR = 2 (EXISTS ideas are dropped), and orders by the total of the three, ties by novelty.
 
 ## Prior-art agent (one per finalist, parallel)
 

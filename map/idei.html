@@ -95,8 +95,14 @@ button:focus-visible,textarea:focus-visible,input:focus-visible,.node:focus-visi
 .e-resflow{stroke:var(--res);stroke-width:2.8;stroke-dasharray:9 7;animation:f16 .85s linear infinite;marker-end:url(#m-res)}
 #m-res path{fill:var(--res)}
 .d-res{--c:var(--res);border-radius:3px}
+.d-inp{--c:var(--cus);border-radius:3px}
 .chip.res,.kind.res{--c:var(--res)}
 .k-step .body{fill:color-mix(in srgb,var(--stp) 14%,var(--bg));stroke:var(--stp)}
+.k-input .body{fill:color-mix(in srgb,var(--cus) 14%,var(--bg));stroke:var(--cus)}
+.k-input .nb{fill:var(--cus)}
+.e-inp{stroke:none;fill:none}
+.brk{fill:none;stroke:var(--apr);stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round;pointer-events:none}
+.inarr{fill:none;stroke:var(--cus);stroke-width:2.2;stroke-dasharray:8 8;stroke-linecap:round;animation:f16 1.1s linear infinite;marker-end:url(#m-cus);pointer-events:none}
 .k-extra .body{fill:var(--panel2);stroke:var(--ext);stroke-width:1.5}
 .k-custom .body{fill:color-mix(in srgb,var(--cus) 12%,var(--bg));stroke:var(--cus);stroke-dasharray:3 3}
 .node:hover .body{stroke-width:3.4}
@@ -125,7 +131,7 @@ button:focus-visible,textarea:focus-visible,input:focus-visible,.node:focus-visi
 .panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px;display:flex;flex-direction:column;gap:16px;min-width:0}
 #pc{display:flex;flex-direction:column;gap:14px;min-width:0}
 .kind{margin:0;font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--c,var(--mut));font-weight:600}
-.c-approach{--c:var(--apr)}.c-step{--c:var(--stp)}.c-extra{--c:var(--ext)}.c-hub{--c:var(--hub)}.c-custom{--c:var(--cus)}
+.c-approach{--c:var(--apr)}.c-step{--c:var(--stp)}.c-extra{--c:var(--ext)}.c-hub{--c:var(--hub)}.c-input{--c:var(--cus)}.c-custom{--c:var(--cus)}
 h2{margin:0;font-size:20px;line-height:1.2;font-weight:600;text-wrap:balance}
 h3{margin:0 0 6px;font-size:12px;color:var(--mut);font-weight:600;letter-spacing:.04em}
 .desc,.why{margin:0;max-width:65ch}
@@ -202,8 +208,10 @@ textarea,input[type=text]{width:100%;background:var(--panel2);color:var(--fg);bo
 var W=1320,H=860,BX0=-820,BY0=-230,BX1=1600,BY1=1300;
 var $=function(s){return document.querySelector(s)};
 var esc=function(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})};
-var KIND={hub:'Map center',approach:'Approach to idea creation',step:'Hypothesis check step',extra:'Easy to forget',custom:'Own idea',cluster:'Method base section',method:'Method'};
+var KIND={hub:'Map center',approach:'Approach to idea creation',step:'Hypothesis check step',input:'Input data',extra:'Easy to forget',custom:'Own idea',cluster:'Method base section',method:'Method'};
 var STATUS=['Not started','In progress','Done','Dropped'];
+var INPUT_D='The entry to idea generation. Before any method is chosen, the topic is roasted: no topic, no work. With a topic, five to ten questions pull out the details: who it is for, the concrete pain, what exists, what success means, constraints, assets, what is off limits, how bold the ideas may be. Unknown details become marked assumptions. The mode (light, middle or deep) decides how many methods run.';
+var INPUT_HOW=['Give a topic: an area, a problem or a goal. Without it the work stops.','Answer the first batch of up to four questions about the topic.','Answer the follow-up batch built from your answers. A detail you do not know becomes a marked assumption; the topic itself is never assumed.','Choose the mode: light (one method), middle (three methods: best fit, median, least fit) or deep (one method from each of the 14 approaches).'];
 var HUB_D='A working map of the research: from ways of generating an idea to checking its feasibility. Click a node to see its description and links. Project scope: come up with an idea, write the most detailed requirements specification possible and the main test cases for checking that the implementation is correct. The implementation itself is not part of the project.';
 
 var APR=[
@@ -392,6 +400,7 @@ var edgesG=$('#edges'),nodesG=$('#nodes'),world=$('#world'),svg=$('#svg'),stage=
 
 function baseNodes(){
   var out=[{id:'hub',kind:'hub',label:'IDEAS',d:HUB_D,x:330,y:1190,r:42}];
+  out.push({id:'in',kind:'input',num:'0',label:'Input data\nwith roast',d:INPUT_D,how:INPUT_HOW,x:-50,y:1190,r:25,hw:75,hh:24});
   APR.forEach(function(a,i){
     out.push(Object.assign({},a,{kind:'approach',x:330,y:-120+i*80,r:22}));
   });
@@ -405,7 +414,7 @@ function build(){
   NL.forEach(function(n){M[n.id]=n});
   E=[];
   kbEdges();{
-  APR.forEach(function(a){E.push({a:a.id,b:'s1',t:'feed'})});
+  APR.forEach(function(a){E.push({a:a.id,b:'s1',t:'feed'});E.push({a:'in',b:a.id,t:'inp'})});
   for(var i=1;i<8;i++)E.push({a:'s'+i,b:'s'+(i+1),t:'flow'});
   E.push({a:'s8',b:'s2',t:'loop',lab:'iteration'});
   E.push({a:'hub',b:'s9',t:'resflow',lab:'the idea is good',lp:[385,1117]});
@@ -420,7 +429,7 @@ function build(){
 }
 
 function nodeSVG(n){
-  var lines=n.label.split('\n'),isR=n.kind==='step',shape,inner='';
+  var lines=n.label.split('\n'),isR=n.kind==='step'||n.kind==='input',shape,inner='';
   var tsp=lines.map(function(t,i){return '<tspan x="0" dy="'+(i?15:0)+'">'+esc(t)+'</tspan>'}).join('');
   if(isR){
     var w=n.hw,h=n.hh,lx=-w+39;
@@ -523,7 +532,8 @@ function renderPanel(){
   var pc=$('#pc');
   if(!SEL){
     pc.innerHTML='<p class="kind">How to read the map</p><ul class="how">'+
-      '<li>Blue nodes: ways to generate an idea, with its methods to the left of each. Arrows lead from approaches to the first check step, the hypothesis.</li>'+
+      '<li>Orange node on the left: input data. The topic is roasted first (no topic, no work), then the questions about it are asked. Only then are methods chosen.</li>'+
+      '<li>Blue nodes: ways to generate an idea, with its methods to the left of each. Arrows lead from approaches to the first check step, the hypothesis. The IDEAS node feeds your picks back into the approaches for the next cycle.</li>'+
       '<li>Idea ring: approaches, eight teal check steps and the return to a new idea. The block of spec, test cases and prompt is set off by a frame: it is needed only if the idea passed the check.</li>'+
       '<li>Teal chain: eight feasibility check steps. The decision returns to the second step (iteration), and the cycle result arrives at IDEAS. Only an approved idea goes further, into the three lilac result steps: spec, test cases and implementation prompt.</li>'+
       '<li>Gray nodes: things that are easy to forget. Each is connected to the step where it matters most.</li>'+
@@ -611,10 +621,10 @@ function viewList(){
 function renderViews(){$('#views').innerHTML=viewList().map(function(v){return '<button type="button" data-view="'+v[0]+'">'+esc(v[1])+'</button>'}).join('')}
 $('#views').addEventListener('click',function(e){var b=e.target.closest('[data-view]');if(b)setView(b.getAttribute('data-view'),true)});
 function renderLegend(){
-  $('#legend').innerHTML='<span><i class="dot d-apr"></i>Approach</span><span><i class="dot d-stp"></i>Check step</span><span><i class="dot d-res"></i>Result: spec, test cases, prompt</span><span><i class="dot d-ext"></i>Do not forget</span>'+'<span class="sep">Method, colored by literature section:</span>'+CL.map(function(c,i){return '<span><i class="dot cl'+i+'"></i>'+esc(c.name.replace(/\n/g,' '))+'</span>'}).join('');
+  $('#legend').innerHTML='<span><i class="dot d-apr"></i>Approach</span><span><i class="dot d-stp"></i>Check step</span><span><i class="dot d-inp"></i>Input data</span><span><i class="dot d-res"></i>Result: spec, test cases, prompt</span><span><i class="dot d-ext"></i>Do not forget</span>'+'<span class="sep">Method, colored by literature section:</span>'+CL.map(function(c,i){return '<span><i class="dot cl'+i+'"></i>'+esc(c.name.replace(/\n/g,' '))+'</span>'}).join('');
 }
 function init(){
-  $('#frames').innerHTML='<rect x="440" y="690" width="1090" height="440" rx="16" class="frame"/><text x="496" y="720" class="frame-t">SPEC, TEST CASES AND PROMPT · ONLY IF THE IDEA IS GOOD</text>';
+  $('#frames').innerHTML='<rect x="440" y="690" width="1090" height="440" rx="16" class="frame"/><text x="496" y="720" class="frame-t">SPEC, TEST CASES AND PROMPT · ONLY IF THE IDEA IS GOOD</text>'+'<path class="brk" d="M345 -210 H392 V990 H345"/><path class="inarr" d="M30 1170 C150 1150 330 1060 388 998"/><path class="inarr" d="M312 1152 C296 1100 326 1042 350 1000"/><text class="elab" x="214" y="1036">your picks: next cycle</text>';
   render();renderPanel();renderLegend();renderViews();$('#chip').hidden=true;
   setView(stage.getBoundingClientRect().width<700?'apr':'all',false);
 }

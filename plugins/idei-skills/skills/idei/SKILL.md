@@ -16,10 +16,10 @@ Rules for every skill in this plugin (keep them in mind throughout):
 
 1. **Look at the registry.** Read the start of `ideas/*/idea.md` (fields `title`, `status`, `iteration`) in the working folder. No `ideas/` folder means no ideas yet. Show a short list.
 2. **Find out what the user wants and hand over:**
-   - **New idea.** If the context is unclear, hand over to `idei-generate`, which asks ten context questions in one message and fills unanswered ones with labeled assumptions.
+   - **New idea.** If the context is unclear, hand over to `idei-generate`, which first roasts the topic (no topic, no work), then asks questions about it and fills unanswered details with labeled assumptions.
    - **The user brings their own idea.** Create a record from `${CLAUDE_PLUGIN_ROOT}/templates/idea.md` (status `draft`, empty `origin`, `language` set to the user's language) and hand it to `idei-check`.
    - **Continue an existing one.** By status: `draft` and `checking` go to `idei-check`; `approved`: say that next, optionally, come the spec and test cases (`idei-spec`), then the implementation prompt (`idei-prompt`); `rejected` and `parked`: show the reason from `check.md` and offer to return to the idea or start a new one.
-3. **Statuses.** `draft → checking → approved | rejected | parked`. Only `idei-check` sets `approved`, `rejected` or `parked`, from the step 8 decision. Never start the spec, cases or prompt for an idea that is not `approved`: explain that a check comes first and offer it.
+3. **Statuses.** `draft → checking → approved | rejected | parked`. Only `idei-check` sets `approved`, `rejected` or `parked`, from the step 8 decision. Steps 9 to 11 (spec, cases, prompt) only for an idea that is `approved` and that the user chose as their final pick, one idea or a pair, never for a list of candidates: otherwise explain that a final choice and a check come first and offer them.
 4. **Names and dates.** Idea folder `ideas/<slug>/`, slug in Latin letters with hyphens from the title. Use today's date from the environment.
 5. **Calling other skills.** Through the Skill tool; the full names in the plugin are `idei-skills:idei-generate`, `idei-skills:idei-check`, `idei-skills:idei-spec`, `idei-skills:idei-prompt`.
 

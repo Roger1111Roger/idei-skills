@@ -9,7 +9,7 @@ The plugin invents and checks ideas and prepares documents. It does not build an
 | Skill | What it does | Required |
 |---|---|---|
 | `idei` | Entry point: reads the idea registry, asks for context, hands over to the right skill | yes |
-| `idei-generate` | Picks approaches and methods from the catalog, walks you through a method, records ideas | yes |
+| `idei-generate` | Roasts your topic, runs isolated method agents (light, middle or deep), ranks results and checks prior art, then repeats with your picks until you are satisfied | yes |
 | `idei-check` | Eight feasibility steps with a way back for rework, decision go / rework / hold / stop | yes |
 | `idei-spec` | Steps 9-10: requirements spec and test cases (approved ideas only) | no |
 | `idei-prompt` | Step 11: implementation prompt built from the spec and cases (approved ideas only) | no |

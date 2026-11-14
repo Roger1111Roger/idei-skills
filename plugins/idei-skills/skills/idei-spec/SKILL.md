@@ -9,7 +9,7 @@ First: the rules for all skills in `idei/SKILL.md` and `${CLAUDE_PLUGIN_ROOT}/ca
 
 ## Preconditions
 
-Needed: `ideas/<slug>/idea.md` with status `approved` and `check.md` with decision `go`. If not, explain that a spec is written only for a checked idea and go back to `idei` or `idei-check`.
+Needed: `ideas/<slug>/idea.md` with status `approved`, `check.md` with decision `go`, and the user's explicit final choice of this idea (at most two ideas at a time). If not, explain that a spec is written only for a checked idea that the user has finally chosen, and go back to `idei` or `idei-check`.
 
 ## Step 9: spec → `spec.md`
 
